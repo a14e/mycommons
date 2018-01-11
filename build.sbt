@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.1.1"
+version := "0.1.2"
 
 
 organization := "com.github.a14e"
@@ -79,17 +79,17 @@ publishArtifact in Test := false
 // publishing
 
 pomExtra := {
-  <url>https://github.com/a14e/MongoLess/</url>
+  <url>https://github.com/a14e/mycommons/</url>
     <licenses>
       <license>
         <name>MIT</name>
-        <url>https://github.com/a14e/MongoLess/blob/master/LICENSE.txt</url>
+        <url>https://github.com/a14e/mycommons/blob/master/LICENSE.txt</url>
         <distribution>repo</distribution>
       </license>
     </licenses>
     <scm>
-      <connection>scm:git:git@github.com:a14e/MongoLess.git</connection>
-      <url>https://github.com/a14e/MongoLess.git</url>
+      <connection>scm:git:git@github.com:a14e/mycommons.git</connection>
+      <url>https://github.com/a14e/mycommons.git</url>
     </scm>
     <developers>
       <developer>
