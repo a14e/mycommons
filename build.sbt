@@ -9,7 +9,7 @@ organization := "com.github.a14e"
 scalaVersion := "2.12.4"
 
 
-val akkaHttpVersion = "10.0.10"
+val akkaHttpVersion = "10.0.11"
 
 libraryDependencies ++= Seq(
 
