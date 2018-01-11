@@ -9,7 +9,7 @@ trait CustomJsonEncodings
   extends ByteStringEncoding
     with EnumEncodings
     with IdEncoding
-    with LongInstantEncoding
+    with TimeWrappersEncodings
 
 object CustomJsonEncodings extends CustomJsonEncodings
 
