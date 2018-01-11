@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.1.5"
+version := "0.1.6"
 
 
 organization := "com.github.a14e"
@@ -9,7 +9,7 @@ organization := "com.github.a14e"
 scalaVersion := "2.12.4"
 
 
-val akkaHttpVersion = "10.0.11"
+val akkaHttpVersion = "10.0.10"
 
 libraryDependencies ++= Seq(
 
