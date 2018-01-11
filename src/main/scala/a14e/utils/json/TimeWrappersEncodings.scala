@@ -6,19 +6,19 @@ import io.circe.{Decoder, Encoder}
 
 trait TimeWrappersEncodings {
 
-  implicit val MillisInstantEncoder: Encoder[Millis[Instant]] =
-    Encoder.encodeLong.contramap[Millis[Instant]](_.time.toEpochMilli)
+  implicit def MillisInstantEncoder[T: TimeData]: Encoder[Millis[T]] =
+    Encoder.encodeLong.contramap[Millis[T]](x => implicitly[TimeData[T]].toMillis(x))
 
 
-  implicit val MillisInstantDecoder: Decoder[Millis[Instant]] =
-    Decoder.decodeLong.map[Millis[Instant]](x => Millis[Instant](Instant.ofEpochMilli(x)))
+  implicit def MillisInstantDecoder[T: TimeData]: Decoder[Millis[T]] =
+    Decoder.decodeLong.map[Millis[T]](x => implicitly[TimeData[T]].fromMillis(x))
 
 
-  implicit val SecondsInstantEncoder: Encoder[Seconds[Instant]] =
-    Encoder.encodeLong.contramap[Seconds[Instant]](_.time.getEpochSecond)
+  implicit def SecondsInstantEncoder[T: TimeData]: Encoder[Seconds[T]] =
+    Encoder.encodeLong.contramap[Seconds[T]](x => implicitly[TimeData[T]].toSeconds(x))
 
-  implicit val SecondsInstantDecoder: Decoder[Seconds[Instant]] =
-    Decoder.decodeLong.map[Seconds[Instant]](x => Seconds[Instant](Instant.ofEpochSecond(x)))
+  implicit def SecondsInstantDecoder[T: TimeData]: Decoder[Seconds[T]] =
+    Decoder.decodeLong.map[Seconds[T]](x => implicitly[TimeData[T]].fromSeconds(x))
 
 }
 

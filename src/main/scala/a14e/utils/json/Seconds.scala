@@ -2,7 +2,7 @@ package a14e.utils.json
 
 import java.time.Instant
 
-
+import scala.concurrent.duration.Duration
 import scala.language.implicitConversions
 
 sealed trait Seconds[T] {
@@ -12,9 +12,9 @@ sealed trait Seconds[T] {
 
 object Seconds {
 
-  implicit def apply[T: IsTime](time: T): Seconds[T] = SecondsImpl[T](time)
+  implicit def apply[T: TimeData](time: T): Seconds[T] = SecondsImpl[T](time)
 
-  implicit def toTime[T: IsTime](longInstant: Seconds[T]): T = {
+  implicit def toTime[T: TimeData](longInstant: Seconds[T]): T = {
     longInstant.asInstanceOf[SecondsImpl[T]].time
   }
 
@@ -28,9 +28,9 @@ sealed trait Millis[T] {
 
 object Millis {
 
-  implicit def apply[T: IsTime](time: T): Millis[T] = MillisImpl(time)
+  implicit def apply[T: TimeData](time: T): Millis[T] = MillisImpl(time)
 
-  implicit def toTime[T: IsTime](longInstant: Millis[T]): T = {
+  implicit def toTime[T: TimeData](longInstant: Millis[T]): T = {
     longInstant.asInstanceOf[MillisImpl[T]].time
   }
 
@@ -38,8 +38,34 @@ object Millis {
 
 }
 
-sealed trait IsTime[T]
+trait TimeData[T] {
+  def toMillis(x: T): Long
+  def toSeconds(x: T): Long
 
-object IsTime {
-  implicit val isInstant: IsTime[Instant] = new IsTime[Instant] {}
+
+  def fromMillis(x: Long): T
+  def fromSeconds(x: Long): T
+}
+
+object TimeData {
+  implicit val InstantTime: TimeData[Instant] = new TimeData[Instant] {
+    override def toMillis(x: Instant): Long = x.toEpochMilli
+
+    override def toSeconds(x: Instant): Long = x.getEpochSecond
+
+    override def fromMillis(x: Long): Instant = Instant.ofEpochMilli(x)
+
+    override def fromSeconds(x: Long): Instant = Instant.ofEpochSecond(x)
+  }
+
+  implicit val DurationTime: TimeData[Duration] = new TimeData[Duration] {
+    import scala.concurrent.duration._
+    override def toMillis(x: Duration): Long = x.toMillis
+
+    override def toSeconds(x: Duration): Long = x.toSeconds
+
+    override def fromMillis(x: Long): Duration = x.millis
+
+    override def fromSeconds(x: Long): Duration = x.seconds
+  }
 }
