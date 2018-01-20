@@ -2,7 +2,8 @@ package a14e.utils.crypto
 
 import com.google.common.io.BaseEncoding
 import a14e.utils.crypto.HmacAlgorithm.HmacAlgorithm
-
+import a14e.utils.encodings.AsImplicits._
+import a14e.utils.encodings.Base64.Base64
 
 object HmacHashing {
 
@@ -16,7 +17,7 @@ object HmacHashing {
     val mac = Mac.getInstance(algorithm.toString)
     mac.init(secretKey)
     val result: Array[Byte] = mac.doFinal(message.getBytes)
-    BaseEncoding.base64().encode(result)
+    result.as[Base64]
   }
 }
 
