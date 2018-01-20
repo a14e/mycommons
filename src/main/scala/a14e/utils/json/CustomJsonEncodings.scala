@@ -9,7 +9,7 @@ trait CustomJsonEncodings
   extends ByteStringEncoding
     with EnumEncodings
     with IdEncoding
-    with TimeWrappersEncodings
+    with TaggedEncodings
 
 object CustomJsonEncodings extends CustomJsonEncodings
 
@@ -20,7 +20,7 @@ object JsBuild {
     def json: Json
   }
 
-  case class JsWrapperImpl(json: Json) extends JsWrapper
+  private case class JsWrapperImpl(json: Json) extends JsWrapper
 
   implicit def jsonToJsWrapper[T: Encoder](x: T): JsWrapper = JsWrapperImpl(x.asJson)
 

@@ -6,8 +6,10 @@ import a14e.bson.decoder.BsonDecoder
 import a14e.bson.decoder.BsonDecoder._
 import a14e.bson.decoder.BsonDecoder._
 import a14e.bson.encoder.BsonEncoder
-import a14e.utils.json.{Millis, Seconds, TimeData}
+import a14e.utils.encodings.{AS, AsTag}
+import a14e.utils.enum.EnumFinder
 import akka.util.ByteString
+import io.circe.{Decoder, Encoder}
 
 trait CustomBsonEncodings {
   implicit lazy val byteStringEncoder: BsonEncoder[ByteString] =
@@ -17,28 +19,20 @@ trait CustomBsonEncodings {
     implicitly[BsonDecoder[Array[Byte]]].map(ByteString(_))
 
 
-  implicit def MillisTimeEncoder[T: TimeData]: BsonEncoder[Millis[T]] =
-    implicitly[BsonEncoder[Instant]].contramap[Millis[T]](x =>
-      Instant.ofEpochMilli(implicitly[TimeData[T]].toMillis(x))
-    )
+  implicit def taggedBsonEncoder[T: BsonEncoder, B <: AsTag]: BsonEncoder[AS[T, B]] =
+    implicitly[BsonEncoder[T]].contramap[AS[T, B]](x => x.value)
 
 
-  implicit def MillisTimeDecoder[T: TimeData]: BsonDecoder[Millis[T]] = {
-    implicitly[BsonDecoder[Instant]].map[Millis[T]] { x =>
-      implicitly[TimeData[T]].fromMillis(x.toEpochMilli)
-    }
+  implicit def taggedBsonDecoder[T: BsonDecoder, B <: AsTag]: BsonDecoder[AS[T, B]] = {
+    implicitly[BsonDecoder[T]].map[AS[T, B]] { x => AS[T, B](x) }
   }
 
-  implicit def MillisSecondsEncoder[T: TimeData]: BsonEncoder[Seconds[T]] =
-    implicitly[BsonEncoder[Instant]].contramap[Seconds[T]](x =>
-      Instant.ofEpochSecond(implicitly[TimeData[T]].toSeconds(x))
-    )
 
+  implicit def enumerationValueEncoder[T <: Enumeration#Value]: BsonEncoder[T] =
+    implicitly[BsonEncoder[String]].contramap[T](_.toString)
 
-  implicit def MillisSecondsDecoder[T: TimeData]: BsonDecoder[Seconds[T]] = {
-    implicitly[BsonDecoder[Instant]].map[Seconds[T]] { x =>
-      implicitly[TimeData[T]].fromSeconds(x.getEpochSecond)
-    }
+  implicit def enumerationValueDecoder[T <: Enumeration#Value : EnumFinder]: BsonDecoder[T] = {
+    implicitly[BsonDecoder[String]].map(implicitly[EnumFinder[T]].find.withName(_).asInstanceOf[T])
   }
 }
 

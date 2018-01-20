@@ -13,11 +13,10 @@ import scala.util.{Failure, Success, Try}
 
 trait EnumEncodings {
   implicit def enumerationValueEncoder[T <: Enumeration#Value]: Encoder[T] =
-    Encoder.encodeString.contramap[T](_.toString)
+    Encoder[String].contramap[T](_.toString)
 
-  implicit def enumerationValueDecoder[T <: Enumeration : ClassTag]: Decoder[T#Value] = {
-    val enum = EnumFinder.cachedEnum[T]
-    Decoder.decodeString.map(enum.withName)
+  implicit def enumerationValueDecoder[T <: Enumeration#Value : EnumFinder]: Decoder[T] = {
+    Decoder[String].map(implicitly[EnumFinder[T]].find.withName(_).asInstanceOf[T])
   }
 
 }

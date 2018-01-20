@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.1.6"
+version := "0.1.7"
 
 
 organization := "com.github.a14e"
@@ -63,8 +63,17 @@ libraryDependencies ++= Seq(
   // для корсов
   "ch.megard" %% "akka-http-cors" % "0.2.2",
 
-  "com.github.a14e" %% "mongoless" % "0.2.1"
+  "com.github.a14e" %% "mongoless" % "0.2.2"
 )
+
+val circeVersion = "0.8.0"
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser",
+  "io.circe" %% "circe-java8",
+  "io.circe" %% "circe-generic-extras"
+).map(_ % circeVersion)
 
 javacOptions in(Compile, compile) ++= {
   val javaVersion = "1.8"
