@@ -16,6 +16,7 @@ import scala.collection.JavaConverters._
 
 class SwaggerDocService(system: ActorSystem,
                         configuration: Config,
+                        reflectionPath: String,
                         mainConfigs: HttpConfigs) extends SwaggerHttpService  {
   override lazy val apiClasses: Set[Class[_]] = classesWithApiAnnotation().toSet
   override val host = s"${mainConfigs.host}:${mainConfigs.port}"
@@ -26,7 +27,7 @@ class SwaggerDocService(system: ActorSystem,
 
 
   private def classesWithApiAnnotation(): Seq[Class[_]] = {
-    val ref = new Reflections("a14e")
+    val ref = new Reflections(reflectionPath)
     val annotatedJavaList = ref.getTypesAnnotatedWith(classOf[Api])
     annotatedJavaList.asScala.toList
   }
