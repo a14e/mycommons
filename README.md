@@ -1,5 +1,5 @@
 # mycommons
 
 ```scala
-libraryDependencies += "com.github.a14e" %% "mycommons" % "0.1.9"
+libraryDependencies += "com.github.a14e" %% "mycommons" % "0.1.10"
 ```

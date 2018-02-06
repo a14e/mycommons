@@ -137,7 +137,7 @@ object Hex extends AsTag {
 object StringValue extends AsTag {
   type StringValue = this.type
 
-  override type TO = StringValue
+  override type TO = String
 
 
   implicit val StringedInt: TaggedEncodings[Int, String, StringValue] =
