@@ -1,6 +1,8 @@
 package a14e.utils.encodings
 
 import java.time.Instant
+import java.util.UUID
+
 import a14e.utils.encodings.NumberEnum.NumberEnum
 import a14e.utils.encodings.Seconds.{Seconds, TO}
 import a14e.utils.enum.EnumFinder
@@ -131,6 +133,65 @@ object Hex extends AsTag {
     }
 }
 
+
+object StringValue extends AsTag {
+  type StringValue = this.type
+
+  override type TO = StringValue
+
+
+  implicit val StringedInt: TaggedEncodings[Int, String, StringValue] =
+    new TaggedEncodings[Int, String, StringValue] {
+      override def decode(x: String): Int = x.toInt
+
+      override def encode(x: Int): String = x.toString
+    }
+
+  implicit val StringedLong: TaggedEncodings[Long, String, StringValue] =
+    new TaggedEncodings[Long, String, StringValue] {
+      override def decode(x: String): Long = x.toLong
+
+      override def encode(x: Long): String = x.toString
+    }
+
+
+  implicit val StringedDouble: TaggedEncodings[Double, String, StringValue] =
+    new TaggedEncodings[Double, String, StringValue] {
+      override def decode(x: String): Double = x.toDouble
+
+      override def encode(x: Double): String = x.toString
+    }
+
+  implicit val StringedBoolean: TaggedEncodings[Boolean, String, StringValue] =
+    new TaggedEncodings[Boolean, String, StringValue] {
+      override def decode(x: String): Boolean = x.toBoolean
+
+      override def encode(x: Boolean): String = x.toString
+    }
+
+
+  implicit val StringedBigInt: TaggedEncodings[BigInt, String, StringValue] =
+    new TaggedEncodings[BigInt, String, StringValue] {
+      override def decode(x: String): BigInt = BigInt(x)
+
+      override def encode(x: BigInt): String = x.toString
+    }
+
+
+  implicit val StringedBigDecimal: TaggedEncodings[BigDecimal, String, StringValue] =
+    new TaggedEncodings[BigDecimal, String, StringValue] {
+      override def decode(x: String): BigDecimal = BigDecimal(x)
+
+      override def encode(x: BigDecimal): String = x.toString
+    }
+
+  implicit val StringedUUID: TaggedEncodings[UUID, String, StringValue] =
+    new TaggedEncodings[UUID, String, StringValue] {
+      override def decode(x: String): UUID = UUID.fromString(x)
+
+      override def encode(x: UUID): String = x.toString
+    }
+}
 
 
 
