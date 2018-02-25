@@ -127,9 +127,9 @@ object Hex extends AsTag {
 
   implicit val arrayEncodings: TaggedEncodings[Array[Byte], String, Hex] =
     new TaggedEncodings[Array[Byte], String, Hex] {
-      override def encode(x: Array[Byte]): String = BaseEncoding.base16().encode(x)
+      override def encode(x: Array[Byte]): String = BaseEncoding.base16().lowerCase().encode(x)
 
-      override def decode(base64: String): Array[Byte] = BaseEncoding.base16().decode(base64)
+      override def decode(base64: String): Array[Byte] = BaseEncoding.base16().lowerCase().decode(base64)
     }
 }
 

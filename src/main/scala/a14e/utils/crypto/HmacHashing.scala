@@ -4,6 +4,7 @@ import com.google.common.io.BaseEncoding
 import a14e.utils.crypto.HmacAlgorithm.HmacAlgorithm
 import a14e.utils.encodings.AsImplicits._
 import a14e.utils.encodings.Base64.Base64
+import a14e.utils.encodings.Hex.Hex
 
 object HmacHashing {
 
@@ -13,11 +14,11 @@ object HmacHashing {
   def hash(message: String,
            secret: String,
            algorithm: HmacAlgorithm): String = {
-    val secretKey = new SecretKeySpec(secret.getBytes, algorithm.toString)
+    val secretKey = new SecretKeySpec(secret.getBytes("UTF-8"), algorithm.toString)
     val mac = Mac.getInstance(algorithm.toString)
     mac.init(secretKey)
     val result: Array[Byte] = mac.doFinal(message.getBytes)
-    result.as[Base64]
+    result.as[Hex]
   }
 }
 

@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.1.10"
+version := "0.1.11"
 
 
 organization := "com.github.a14e"
@@ -63,7 +63,7 @@ libraryDependencies ++= Seq(
   // для корсов
   "ch.megard" %% "akka-http-cors" % "0.2.2",
 
-  "com.github.a14e" %% "mongoless" % "0.2.2"
+  "com.github.a14e" %% "mongoless" % "0.2.4"
 )
 
 val circeVersion = "0.8.0"
