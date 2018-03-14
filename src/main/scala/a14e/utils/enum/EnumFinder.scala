@@ -7,8 +7,8 @@ import com.typesafe.config.ConfigException.Generic
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 
-trait EnumFinder[T <: Enumeration#Value] {
-  def find: Enumeration
+trait EnumFinder[ENUM <: Enumeration] {
+  def find: ENUM
 }
 
 
@@ -17,7 +17,9 @@ trait FindableEnum extends Enumeration {
   self =>
 
 
-  implicit val enumFinder: EnumFinder[Value] = new EnumFinder[Value] {
-    override def find: Enumeration = self
+
+  implicit val enumFinder: EnumFinder[self.type] = new EnumFinder[self.type] {
+
+    override def find: self.type = self
   }
 }

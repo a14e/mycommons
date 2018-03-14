@@ -65,11 +65,11 @@ object NumberEnum extends AsTag {
 
   override type TO = Int
 
-  implicit def numberEnumEncodings[T <: Enumeration#Value : EnumFinder]: TaggedEncodings[T, Int, NumberEnum] =
-    new TaggedEncodings[T, Int, NumberEnum] {
-      override def encode(x: T): Int = x.id
+  implicit def numberEnumEncodings[ENUM <: Enumeration: EnumFinder]: TaggedEncodings[ENUM#Value, Int, NumberEnum] =
+    new TaggedEncodings[ENUM#Value, Int, NumberEnum] {
+      override def encode(x: ENUM#Value): Int = x.id
 
-      override def decode(id: Int): T = implicitly[EnumFinder[T]].find(id).asInstanceOf[T]
+      override def decode(id: Int): ENUM#Value = implicitly[EnumFinder[ENUM]].find(id)
     }
 }
 

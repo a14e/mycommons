@@ -28,11 +28,11 @@ trait CustomBsonEncodings {
   }
 
 
-  implicit def enumerationValueEncoder[T <: Enumeration#Value]: BsonEncoder[T] =
-    implicitly[BsonEncoder[String]].contramap[T](_.toString)
+  implicit def enumerationValueEncoder[T <: Enumeration]: BsonEncoder[T#Value] =
+    implicitly[BsonEncoder[String]].contramap[T#Value](_.toString)
 
-  implicit def enumerationValueDecoder[T <: Enumeration#Value : EnumFinder]: BsonDecoder[T] = {
-    implicitly[BsonDecoder[String]].map(implicitly[EnumFinder[T]].find.withName(_).asInstanceOf[T])
+  implicit def enumerationValueDecoder[ENUM <: Enumeration  : EnumFinder]: BsonDecoder[ENUM#Value] = {
+    implicitly[BsonDecoder[String]].map(implicitly[EnumFinder[ENUM]].find.withName(_))
   }
 }
 
