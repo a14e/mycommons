@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.Directives.{complete, handleExceptions, pathPre
 import akka.http.scaladsl.server.{ExceptionHandler, Route, _}
 import a14e.utils.configs.{ConfigurationModule, ServerConfiguration}
 import a14e.utils.controller.{CustomAkkaDirectives, RoutesControlErrors}
-import com.typesafe.scalalogging.LazyLogging
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import a14e.utils.controller.Throwers._
 
 trait HttpModule {
@@ -16,13 +16,13 @@ trait HttpModule {
 
   import RouteConcatenation._
 
-  lazy val routes: Route = {
+  def routes(logger: Logger): Route = {
     val withRejectionHandling = controllers.map(_.route).reduce(_ ~ _)
     val withoutRejectionHandling = afterRejectControllers.map(_.route).reduce(_ ~ _)
     val apiControllers = pathPrefix("api" / "v1")(withRejectionHandling)
 
     handleExceptions(generateExceptionHandler) {
-      logData(enableLogging) {
+      logData(logger, enableLogging, strictJson = true) {
         (handleRejections(rejectionHandler) & setCors(enableCors)) {
           apiControllers
         }

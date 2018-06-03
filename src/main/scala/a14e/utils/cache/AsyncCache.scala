@@ -52,6 +52,8 @@ class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
     Future.unit
   }
 
+
+  // TODO сделать тут кофеин
   override def cached(key: KEY)(block: => Future[VALUE]): Future[VALUE] = {
     // двойная проверка, чтобы не нарываться лишний раз на синхронизацию
     get(key).flatMap {

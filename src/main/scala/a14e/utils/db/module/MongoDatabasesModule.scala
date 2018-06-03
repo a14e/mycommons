@@ -8,6 +8,7 @@ import a14e.utils.concurrent.ConcurrentModule
 import a14e.utils.configs.ConfigurationModule
 import a14e.utils.db.{DefaultDao, MongoDBConfigs}
 import a14e.utils.db.MongoDBConfigsReaders._
+import a14e.utils.db.module.State.State
 //import a14e.utils.db.module.State.State
 import a14e.utils.enum.FindableEnum
 import akka.http.scaladsl.model.Uri
@@ -21,7 +22,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
-trait DatabasesModule {
+trait MongoDatabasesModule {
   this: ConfigurationModule =>
 
   lazy val mongoClient: MongoClient = {
@@ -64,22 +65,22 @@ trait DatabasesModule {
 
 }
 
-//
-//
-//import a14e.bson.auto._
-//import a14e.utils.bson.CustomBsonEncodings._
-//
-//case class User(id: ID[String],
-//                name: String,
-//                age: Int,
-//                state: State)
-//
-//object State extends FindableEnum {
-//  type State = Value
-//  val Active = Value("ACTIVE")
-//}
-//
-//object Test extends App with DatabasesModule
+
+
+import a14e.bson.auto._
+import a14e.utils.bson.CustomBsonEncodings._
+
+case class User(id: ID[String],
+                name: String,
+                age: Int,
+                state: State)
+
+object State extends FindableEnum {
+  type State = Value
+  val Active = Value("ACTIVE")
+}
+
+//object Test extends App with MongoDatabasesModule
 //  with ConcurrentModule
 //  with ConfigurationModule {
 //  override def configuration = ConfigFactory.parseString(
@@ -88,7 +89,7 @@ trait DatabasesModule {
 //      |  url = "mongodb://localhost:27017"
 //      |  db = "dev"
 //      | user = "userAdmin"
-//      | pwd = "qwerty123"
+//      | password = "qwerty123"
 //      |
 //      |}
 //      |

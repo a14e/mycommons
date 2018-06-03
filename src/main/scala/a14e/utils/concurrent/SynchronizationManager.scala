@@ -16,13 +16,13 @@ import scala.language.postfixOps
 import SyncActor._
 
 trait SynchronizationManager {
-  def sync[T](key: String)(block: => Future[T]): Future[T]
+  def sync[T, KEY <: AnyRef](key: KEY)(block: => Future[T]): Future[T]
 }
 
 class SynchronizationManagerImpl(actorSystem: ActorSystem)
                                 (implicit context: ExecutionContext) extends SynchronizationManager {
 
-  override def sync[T](key: String)(block: => Future[T]): Future[T] = {
+  override def sync[T, KEY <: AnyRef](key: KEY)(block: => Future[T]): Future[T] = {
 
     for {
       _ <- underlying ? Acquire(key)
@@ -46,8 +46,8 @@ class SynchronizationManagerImpl(actorSystem: ActorSystem)
 
 object SyncActor {
   private[concurrent] case object Done
-  private[concurrent] case class Acquire(key: String)
-  private[concurrent] case class Release(key: String)
+  private[concurrent] case class Acquire(key: AnyRef)
+  private[concurrent] case class Release(key: AnyRef)
 }
 
 // TODO максимальный размер очереди
@@ -57,13 +57,13 @@ private class SyncActor extends Actor {
     case Release(key) => release(key)
   }
 
-  def acquire(key: String): Unit = {
+  def acquire(key: AnyRef): Unit = {
     val queue = _callBacks.getOrElseUpdate(key, mutable.Queue[ActorRef]())
     if (queue.isEmpty) sender() ! Done
     queue += sender()
   }
 
-  def release(key: String): Unit = {
+  def release(key: AnyRef): Unit = {
     _callBacks.get(key) match {
       case None =>
       case Some(queue) =>
@@ -77,9 +77,9 @@ private class SyncActor extends Actor {
 
   override def postStop(): Unit = _callBacks.values.foreach(_.foreach(_ ! Done))
 
-  private val _callBacks = new mutable.HashMap[String, mutable.Queue[ActorRef]]
+  private val _callBacks = new mutable.HashMap[AnyRef, mutable.Queue[ActorRef]]
 }
 
 object FakeSynchronizationManager extends SynchronizationManager {
-  override def sync[T](key: String)(block: => Future[T]): Future[T] = block
+  override def sync[T, KEY <: AnyRef](key: KEY)(block: => Future[T]): Future[T] = block
 }
