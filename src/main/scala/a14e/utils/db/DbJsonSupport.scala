@@ -2,6 +2,7 @@ package a14e.utils.db
 
 import io.circe.{parser, Decoder => CirceDecoder, Encoder => CirceEncoder}
 import io.circe.syntax._
+import io.getquill.context.async.AsyncContext
 
 trait DbJsonSupport {
   this: AsyncContext[_, _, _] =>

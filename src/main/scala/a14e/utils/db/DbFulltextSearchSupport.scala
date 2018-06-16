@@ -1,5 +1,7 @@
 package a14e.utils.db
 
+import io.getquill.context.async.AsyncContext
+
 trait DbFulltextSearchSupport {
   this: AsyncContext[_, _, _] =>
 

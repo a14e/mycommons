@@ -64,7 +64,10 @@ libraryDependencies ++= Seq(
   "ch.megard" %% "akka-http-cors" % "0.2.2",
 
 
-
+  // для миграций
+  "org.flywaydb" % "flyway-core" % "4.2.0",
+  "org.postgresql" % "postgresql" % "42.1.4",
+  // для базы
   "io.getquill" %% "quill-async-postgres" % "2.5.4"
 )
 

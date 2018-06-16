@@ -8,7 +8,6 @@ import scala.language.implicitConversions
 trait CustomJsonEncodings
   extends ByteStringEncoding
     with EnumEncodings
-    with IdEncoding
     with TaggedEncodings
 
 object CustomJsonEncodings extends CustomJsonEncodings

@@ -2,6 +2,7 @@ package a14e.utils.db
 
 import a14e.utils.configs.ConfigurationModule
 import com.typesafe.config.Config
+import io.getquill.{LowerCase, PluralizedTableNames, PostgresAsyncContext, SnakeCase}
 
 class DbContext(configuration: Config)
   extends PostgresAsyncContext[NamingStrategy.type](NamingStrategy, configuration)

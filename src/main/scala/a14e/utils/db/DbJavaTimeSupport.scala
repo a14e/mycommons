@@ -3,6 +3,8 @@ package a14e.utils.db
 import java.time.Instant
 import java.util.Date
 
+import io.getquill.context.async.AsyncContext
+
 trait DbJavaTimeSupport {
   this: AsyncContext[_, _, _] =>
 
