@@ -16,7 +16,7 @@ trait RandomGeneratingService {
 
   def generateObjectId(): ObjectId
 
-  def generatePassword(lenght: Int): String
+  def generatePassword(length: Int): String
 
   def prettyId(): String
 
@@ -26,8 +26,8 @@ trait RandomGeneratingService {
 class RandomGeneratingServiceImpl extends RandomGeneratingService {
   override def stringId(): String = UUID.randomUUID().toString
 
-  override def generatePassword(lenght: Int): String = {
-    random.alphanumeric.map(_.toLower).take(lenght).mkString
+  override def generatePassword(length: Int): String = {
+    random.alphanumeric.map(_.toLower).take(length).mkString
   }
 
   override def generateUuid(): UUID = UUID.randomUUID()

@@ -2,14 +2,24 @@ package a14e.utils.strings
 
 object StringImplicits {
 
-  implicit class RichString(val str: String) extends AnyVal {
+  implicit class RichString(val string: String) extends AnyVal {
     def validateLength(minLen: Int,
                        maxLen: Int,
                        name: String)(implicit failAction: String => Unit): Unit = {
-      val len = str.length
+      val len = string.length
       val isValidLen = minLen <= len && len < maxLen
       if (!isValidLen)
         failAction(name)
+    }
+
+    def removeSuffix(suffix: String): String = {
+      if (string.endsWith(suffix)) string.dropRight(suffix.length)
+      else string
+    }
+
+    def removePrefix(prefix: String): String = {
+      if (string.startsWith(prefix)) string.drop(prefix.length)
+      else string
     }
   }
 

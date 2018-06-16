@@ -27,7 +27,7 @@ trait AsyncCache[KEY <: AnyRef, VALUE <: AnyRef] {
 
 }
 
-
+// TODO возможно на других имплементация попробовать?
 class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
                                                      maxSize: Int,
                                                      ttl: FiniteDuration,

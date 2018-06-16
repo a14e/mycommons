@@ -1,12 +1,12 @@
 
 name := "mycommons"
 
-version := "0.1.13"
+version := "0.2.00"
 
 
 organization := "com.github.a14e"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.6"
 
 
 val akkaHttpVersion = "10.0.10"
@@ -63,7 +63,9 @@ libraryDependencies ++= Seq(
   // для корсов
   "ch.megard" %% "akka-http-cors" % "0.2.2",
 
-  "com.github.a14e" %% "mongoless" % "0.2.4"
+
+
+  "io.getquill" %% "quill-async-postgres" % "2.5.4"
 )
 
 val circeVersion = "0.8.0"
