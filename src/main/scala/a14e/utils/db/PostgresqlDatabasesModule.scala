@@ -12,7 +12,7 @@ class DbContext[NS <: NamingStrategy](strategy: NS, configuration: Config)
     with DbEnumsSupport
     with DbJsonSupport
 
-case object NamingStrategy extends PluralizedTableNames with SnakeCase with LowerCase
+case object PgNamingStrategy extends PluralizedTableNames with SnakeCase with LowerCase
 
 trait PostgresqlDatabasesModule[NS <: NamingStrategy] {
   this: ConfigurationModule =>
