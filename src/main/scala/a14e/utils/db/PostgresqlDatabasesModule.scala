@@ -2,10 +2,10 @@ package a14e.utils.db
 
 import a14e.utils.configs.ConfigurationModule
 import com.typesafe.config.Config
-import io.getquill.{LowerCase, PluralizedTableNames, PostgresAsyncContext, SnakeCase}
+import io.getquill.{LowerCase, NamingStrategy, PluralizedTableNames, PostgresAsyncContext, SnakeCase}
 
-class DbContext(configuration: Config)
-  extends PostgresAsyncContext[NamingStrategy.type](NamingStrategy, configuration)
+class DbContext[NS <: NamingStrategy](strategy: NS, configuration: Config)
+  extends PostgresAsyncContext[NS](strategy, configuration)
     with DbJavaTimeSupport
     with SymbolsSupport
     with DynamicQueryBuildingSupport
@@ -14,10 +14,12 @@ class DbContext(configuration: Config)
 
 case object NamingStrategy extends PluralizedTableNames with SnakeCase with LowerCase
 
-trait PostgresqlDatabasesModule {
+trait PostgresqlDatabasesModule[NS <: NamingStrategy] {
   this: ConfigurationModule =>
 
-  lazy val ctx: DbContext = new DbContext(configuration.getConfig("db"))
+  def namingStrategy: NS
+
+  lazy val ctx: DbContext[NS] = new DbContext[NS](namingStrategy, configuration.getConfig("db"))
 
 
   sys.addShutdownHook {
