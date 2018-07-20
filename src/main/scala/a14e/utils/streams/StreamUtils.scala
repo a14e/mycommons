@@ -9,12 +9,12 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{StatusCodes, Uri}
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage, WebSocketRequest}
-import akka.stream.{Materializer, OverflowStrategy}
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.{FlowShape, Materializer, OverflowStrategy}
+import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, Source, Zip}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 
-import scala.collection.{immutable, SeqLike}
+import scala.collection.{SeqLike, immutable}
 import scala.collection.concurrent.TrieMap
 import scala.collection.generic.CanBuildFrom
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -51,23 +51,6 @@ object StreamUtils extends LazyLogging {
 
   def find[T](f: T => Boolean): Sink[T, Future[Option[T]]] = {
     Flow[T].dropWhile(x => !f(x)).toMat(Sink.headOption)(Keep.right)
-  }
-
-  // TODO тесты
-  def zipWithTail[T](): Flow[T, (T, T), _] = {
-    sealed trait State
-    case object Init extends State
-    case class Previous(last: T) extends State
-    case class ObjectsPair(current: T, next: T) extends State
-
-
-    Flow[T].scan(Init: State) {
-      case (Init, elem) => Previous(elem)
-      case (Previous(previous), current) => ObjectsPair(previous, current)
-      case (ObjectsPair(_, previous), current) => ObjectsPair(previous, current)
-    }.collect {
-      case ObjectsPair(current, next) => (current, next)
-    }
   }
 
 
@@ -114,6 +97,77 @@ object StreamUtils extends LazyLogging {
       .via(mapAsyncSuccess(parallelLevel, failOrErr)(func))
       .mapConcat(x => x)
   }
+
+
+
+  def viaSecondOfTuple[IN1, IN2, OUT](subFlow: Flow[IN2, OUT, _]): Flow[(IN1, IN2), (IN1, OUT), _] = {
+
+    val graph = GraphDSL.create() { implicit b =>
+      import akka.stream.scaladsl.GraphDSL.Implicits._
+
+      // prepare graph elements
+      val broadcast = b.add(Broadcast[(IN1, IN2)](2))
+      val merge = b.add(Zip[IN1, OUT]())
+
+
+      broadcast.out(0) ~> firstOfTuple[IN1]() ~> merge.in0
+      broadcast.out(1) ~> secondOfTuple[IN2]() ~> subFlow ~> merge.in1
+
+      // expose ports
+      FlowShape(broadcast.in, merge.out)
+    }
+
+    Flow.fromGraph(graph)
+  }
+
+
+
+  def viaFirstOfTuple[IN1, IN2, OUT](subFlow: Flow[IN1, OUT, _]): Flow[(IN1, IN2), (OUT, IN2), _] = {
+    Flow[(IN1, IN2)]
+      .via(rotateTuple())
+      .via(viaSecondOfTuple(subFlow))
+      .via(rotateTuple())
+  }
+
+  def parallelFlow[IN, OUT](subFlow: Flow[IN, OUT, _]): Flow[IN, (IN, OUT), _] = {
+    val graph = GraphDSL.create() { implicit b =>
+      import akka.stream.scaladsl.GraphDSL.Implicits._
+
+      // prepare graph elements
+      val broadcast = b.add(Broadcast[IN](2))
+      val merge = b.add(Zip[IN, OUT]())
+
+
+      broadcast.out(0) ~> merge.in0
+      broadcast.out(1) ~> subFlow ~> merge.in1
+
+      // expose ports
+      FlowShape(broadcast.in, merge.out)
+    }
+
+    Flow.fromGraph(graph)
+  }
+
+
+  def firstOfTuple[A](): Flow[(A, _), A, _] = Flow[(A, Any)].map { case (a, _) => a }
+
+  def secondOfTuple[B](): Flow[(_, B), B, _] = Flow[(Any, B)].map { case (_, b) => b }
+
+  def zipWithTail[T <: AnyRef]: Flow[T, (T, T), _] = Flow[T].statefulMapConcat { () =>
+    var last = null.asInstanceOf[T]
+    el =>
+
+      if (last ne null) {
+        val res = (last, el)
+        last = el
+        res :: Nil
+      } else {
+        last = el
+        Nil
+      }
+  }
+
+  def rotateTuple[A, B](): Flow[(A, B), (B, A), _] = Flow[(A, B)].map { case (a, b) => (b, a) }
 
 
   // TODO тесты

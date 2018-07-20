@@ -59,7 +59,7 @@ class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
     get(key).flatMap {
       case Some(value) => Future.successful(value)
       case _ =>
-        synchronizationManager.sync(key.toString) { // тут возможны коллизии, но мы с ними готовы мириться)
+        synchronizationManager.sync(key) { // тут возможны коллизии, но мы с ними готовы мириться)
           get(key).flatMap {
             case Some(res) => Future.successful(res)
             case _ => block.andThen {

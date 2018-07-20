@@ -16,7 +16,7 @@ class SynchronizationManagerFactoryImpl(actorSystem: ActorSystem)
                                        (implicit context: ExecutionContext) extends SynchronizationManagerFactory {
   def manager(name: String): SynchronizationManager = this.synchronized {
 
-    store.getOrElseUpdate(name, new SynchronizationManagerImpl(actorSystem))
+    store.getOrElseUpdate(name, new ActorSynchronizationManagerImpl(actorSystem))
 
   }
 

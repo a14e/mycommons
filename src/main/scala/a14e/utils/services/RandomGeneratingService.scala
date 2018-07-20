@@ -3,8 +3,7 @@ package a14e.utils.services
 import java.security.SecureRandom
 import java.util.UUID
 
-import org.bson.types.ObjectId
-import org.mongodb.scala.bson.ObjectId
+
 
 import scala.util.Random
 
@@ -14,7 +13,6 @@ trait RandomGeneratingService {
 
   def generateUuid(): UUID
 
-  def generateObjectId(): ObjectId
 
   def generatePassword(length: Int): String
 
@@ -37,8 +35,6 @@ class RandomGeneratingServiceImpl extends RandomGeneratingService {
   override def generateNumber(): Int = random.nextInt()
 
   private lazy val random = new Random(new SecureRandom())
-
-  override def generateObjectId(): ObjectId = new ObjectId()
 }
 
 object IdGenerator {

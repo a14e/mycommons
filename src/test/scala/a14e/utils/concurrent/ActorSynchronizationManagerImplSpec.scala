@@ -12,7 +12,7 @@ import org.scalatest.junit.JUnitRunner
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Promise
 
-class SynchronizationManagerImplSpec extends DefaultSpec with BeforeAndAfterAll {
+class ActorSynchronizationManagerImplSpec extends DefaultSpec with BeforeAndAfterAll {
 
   "sync" should "run only one task at same time" in new Wiring {
     val function = mock[(Int) => Int]
@@ -79,6 +79,6 @@ class SynchronizationManagerImplSpec extends DefaultSpec with BeforeAndAfterAll 
   }
 
   trait Wiring {
-    val manager = new SynchronizationManagerImpl(actorSystem)
+    val manager = new ActorSynchronizationManagerImpl(actorSystem)
   }
 }

@@ -19,8 +19,8 @@ trait SynchronizationManager {
   def sync[T, KEY <: AnyRef](key: KEY)(block: => Future[T]): Future[T]
 }
 
-class SynchronizationManagerImpl(actorSystem: ActorSystem)
-                                (implicit context: ExecutionContext) extends SynchronizationManager {
+class ActorSynchronizationManagerImpl(actorSystem: ActorSystem)
+                                     (implicit context: ExecutionContext) extends SynchronizationManager {
 
   override def sync[T, KEY <: AnyRef](key: KEY)(block: => Future[T]): Future[T] = {
 

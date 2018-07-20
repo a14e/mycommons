@@ -8,7 +8,6 @@ import a14e.utils.concurrent.SynchronizationManagerFactory
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.stm._
 
 trait CacheManager {
   def cache[KEY <: AnyRef, VALUE <: AnyRef](name: String): AsyncCache[KEY, VALUE]

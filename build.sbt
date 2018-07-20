@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.2.01"
+version := "0.2.02"
 
 
 organization := "com.github.a14e"
@@ -9,69 +9,66 @@ organization := "com.github.a14e"
 scalaVersion := "2.12.6"
 
 
-val akkaHttpVersion = "10.0.10"
+val akkaHttpVersion = "10.1.3"
+val akkaStreamsVersion = "2.5.14"
+
 
 libraryDependencies ++= Seq(
 
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion, // для http
+  "com.typesafe.akka" %% "akka-stream" % akkaStreamsVersion,
 
-  "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided",
-  "com.softwaremill.macwire" %% "macrosakka" % "2.3.0" % "provided",
-  "com.softwaremill.macwire" %% "util" % "2.3.0",
-  "com.softwaremill.macwire" %% "proxy" % "2.3.0",
+  "com.softwaremill.macwire" %% "macros" % "2.3.1" % "provided",
+  "com.softwaremill.macwire" %% "macrosakka" % "2.3.1" % "provided",
+  "com.softwaremill.macwire" %% "util" % "2.3.1",
+  "com.softwaremill.macwire" %% "proxy" % "2.3.1",
 
 
-  "com.google.guava" % "guava" % "21.0", // для полезных утилит (пока только кэш)
+  "com.google.guava" % "guava" % "25.1-jre", // для полезных утилит (пока только кэш)
 
   /** чтобы гуава не жаловалась */
   "com.google.code.findbugs" % "jsr305" % "3.0.1",
 
 
   // для конфигов
-  "com.iheart" %% "ficus" % "1.4.2",
+  "com.iheart" %% "ficus" % "1.4.3",
 
   // для крутых фьюч
-  "org.scala-lang.modules" %% "scala-async" % "0.9.6",
+  "org.scala-lang.modules" %% "scala-async" % "0.9.7",
 
 
-  "ch.qos.logback" % "logback-classic" % "1.1.7", // для логов
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0", //упрощенные логи
+  "ch.qos.logback" % "logback-classic" % "1.2.3", // для логов
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0", //упрощенные логи
 
   "org.scala-lang.modules" %% "scala-async" % "0.9.6",
 
   // для сваггера
-  "com.github.swagger-akka-http" %% "swagger-akka-http" % "0.11.0",
+  "com.github.swagger-akka-http" %% "swagger-akka-http" % "0.14.0",
   "org.webjars" % "swagger-ui" % "3.0.10",
   "org.webjars" % "webjars-locator" % "0.32",
 
-  "de.heikoseeberger" %% "akka-http-circe" % "1.18.0",
+  "de.heikoseeberger" %% "akka-http-circe" % "1.21.0",
 
-  // для базы
-  "org.mongodb.scala" %% "mongo-scala-driver" % "2.2.0",
-  // для сериализации и десериализации
-  "com.chuusai" %% "shapeless" % "2.3.2",
 
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test", // для тестов
-  "junit" % "junit" % "4.11" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test", // для тестов
+  "junit" % "junit" % "4.12" % "test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % "test",
 
   "org.mindrot" % "jbcrypt" % "0.4",
-
-  "org.scala-stm" %% "scala-stm" % "0.8",
 
   // для корсов
   "ch.megard" %% "akka-http-cors" % "0.2.2",
 
 
   // для миграций
-  "org.flywaydb" % "flyway-core" % "4.2.0",
-  "org.postgresql" % "postgresql" % "42.1.4",
+  "org.flywaydb" % "flyway-core" % "5.1.4",
+  "org.postgresql" % "postgresql" % "42.2.4",
   // для базы
   "io.getquill" %% "quill-async-postgres" % "2.5.4"
 )
 
-val circeVersion = "0.8.0"
+val circeVersion = "0.9.3"
 libraryDependencies ++= Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-generic",
