@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.2.02"
+version := "0.2.03"
 
 
 organization := "com.github.a14e"
@@ -58,14 +58,9 @@ libraryDependencies ++= Seq(
   "org.mindrot" % "jbcrypt" % "0.4",
 
   // для корсов
-  "ch.megard" %% "akka-http-cors" % "0.2.2",
+  "ch.megard" %% "akka-http-cors" % "0.2.2"
 
 
-  // для миграций
-  "org.flywaydb" % "flyway-core" % "5.1.4",
-  "org.postgresql" % "postgresql" % "42.2.4",
-  // для базы
-  "io.getquill" %% "quill-async-postgres" % "2.5.4"
 )
 
 val circeVersion = "0.9.3"
