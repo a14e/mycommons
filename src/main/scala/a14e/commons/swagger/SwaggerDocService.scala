@@ -19,7 +19,6 @@ class SwaggerDocService(system: ActorSystem,
                         reflectionPath: String,
                         mainConfigs: HttpConfigs) extends SwaggerHttpService  {
   override lazy val apiClasses: Set[Class[_]] = classesWithApiAnnotation().toSet
-  override val host = s"${mainConfigs.host}:${mainConfigs.port}"
   override val apiDocsPath: String = "api-docs"
   override val info = Info(version = "1.0")
   override val externalDocs = Some(new ExternalDocs("Core Docs", "http://acme.com/docs"))
