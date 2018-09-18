@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.2.05"
+version := "0.3.00"
 
 
 organization := "com.github.a14e"
@@ -11,6 +11,7 @@ scalaVersion := "2.12.6"
 
 val akkaHttpVersion = "10.1.3"
 val akkaStreamsVersion = "2.5.14"
+val playJsonVersion = "2.6.10"
 
 
 libraryDependencies ++= Seq(
@@ -22,6 +23,9 @@ libraryDependencies ++= Seq(
   "com.softwaremill.macwire" %% "macrosakka" % "2.3.1" % "provided",
   "com.softwaremill.macwire" %% "util" % "2.3.1",
   "com.softwaremill.macwire" %% "proxy" % "2.3.1",
+
+
+  "com.typesafe.play" %% "play-json" % playJsonVersion,
 
 
   "com.google.guava" % "guava" % "25.1-jre", // для полезных утилит (пока только кэш)
@@ -47,7 +51,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "swagger-ui" % "3.0.10",
   "org.webjars" % "webjars-locator" % "0.32",
 
-  "de.heikoseeberger" %% "akka-http-circe" % "1.21.0",
+  "de.heikoseeberger" %% "akka-http-play-json" % "1.21.0",
 
 
   "org.scalatest" %% "scalatest" % "3.0.5" % "test", // для тестов
@@ -63,14 +67,7 @@ libraryDependencies ++= Seq(
 
 )
 
-val circeVersion = "0.9.3"
-libraryDependencies ++= Seq(
-  "io.circe" %% "circe-core",
-  "io.circe" %% "circe-generic",
-  "io.circe" %% "circe-parser",
-  "io.circe" %% "circe-java8",
-  "io.circe" %% "circe-generic-extras"
-).map(_ % circeVersion)
+
 
 javacOptions in(Compile, compile) ++= {
   val javaVersion = "1.8"

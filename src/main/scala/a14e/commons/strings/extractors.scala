@@ -1,7 +1,9 @@
 package a14e.commons.strings
 
 import java.time.Instant
-import io.circe.{Decoder, Json}
+
+import play.api.libs.json.{JsValue, Reads}
+
 import scala.util.Try
 
 
@@ -49,12 +51,11 @@ object InstantSecondsString {
 }
 
 
-class JsonExtractor[T: Decoder] {
-  def unapply(json: Json): Option[T] = json.as[T].toOption
+class JsonExtractor[T: Reads] {
+  def unapply(json: JsValue): Option[T] = json.asOpt[T]
 }
 
 
 class EnumExtractor[Enum <: Enumeration](enum: Enum) {
   def unapply(str: String): Option[Enum#Value] = Try(enum.withName(str)).toOption
-
 }
