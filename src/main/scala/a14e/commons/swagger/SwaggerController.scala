@@ -8,6 +8,7 @@ import akka.http.scaladsl.model.headers.`Cache-Control`
 import akka.stream.Materializer
 import a14e.commons.controller.Controller
 import a14e.commons.http.HttpConfigs
+import akka.http.scaladsl.server.{Directive, Directive1}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import org.webjars.WebJarAssetLocator
@@ -58,14 +59,27 @@ class SwaggerController(val configs: Config,
       }
     }
 
-  private def redirectWithUri: Route = (get & extractRequest) { request =>
-    val query = Query("url" -> swaggerJsonUriString(request.uri))
+  private def redirectWithUri: Route =
+    (get & extractRequest & sslEnabledDirective) { (request, sslEnabled) =>
+    val query = Query("url" -> swaggerJsonUriString(request.uri, sslEnabled))
     val newUri = Uri("swagger/index.html").withQuery(query)
     redirect(newUri, StatusCodes.TemporaryRedirect)
   }
 
-  private def swaggerJsonUriString(uri: Uri) =
-    s"${uri.scheme}://${uri.authority}/swagger/api-docs/swagger.json"
+  private def swaggerJsonUriString(uri: Uri,
+                                   sslEnabled: Boolean) = {
+    val scheme = if(sslEnabled) "https" else uri.scheme
+
+    s"$scheme://${uri.authority}/swagger/api-docs/swagger.json"
+  }
+
+  private def sslEnabledDirective: Directive1[Boolean] = {
+    optionalCookie(SslEnabledCookieName).map { cookie =>
+      cookie.exists(x => Try(x.value.toBoolean).toOption.contains(true))
+    }
+  }
+
+  val SslEnabledCookieName = "X-Ssl-Enabled"
 
   private lazy val swaggerUri = s"http://${mainConfigs.host}:${mainConfigs.port}/swagger"
 

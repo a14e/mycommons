@@ -8,7 +8,7 @@ import com.github.swagger.akka.model.Info
 import a14e.commons.http.HttpConfigs
 import com.typesafe.config.Config
 import io.swagger.annotations.Api
-import io.swagger.models.ExternalDocs
+import io.swagger.models.{ExternalDocs, Scheme}
 import io.swagger.models.auth.BasicAuthDefinition
 import org.reflections.Reflections
 
@@ -19,6 +19,8 @@ class SwaggerDocService(system: ActorSystem,
                         reflectionPath: String,
                         mainConfigs: HttpConfigs) extends SwaggerHttpService  {
   override lazy val apiClasses: Set[Class[_]] = classesWithApiAnnotation().toSet
+
+  override val schemes: List[Scheme] =  List(Scheme.HTTP, Scheme.HTTPS)
   override val apiDocsPath: String = "api-docs"
   override val info = Info(version = "1.0")
   override val externalDocs = Some(new ExternalDocs("Core Docs", "http://acme.com/docs"))
