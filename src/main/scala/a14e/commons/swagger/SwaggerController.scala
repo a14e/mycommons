@@ -75,7 +75,7 @@ class SwaggerController(val configs: Config,
 
   private def sslEnabledDirective: Directive1[Boolean] = {
     optionalCookie(SslEnabledCookieName).map { cookie =>
-      cookie.exists(x => Try(x.value.toBoolean).toOption.contains(true))
+      cookie.exists(x => x.value.trim.toLowerCase == "true")
     }
   }
 
