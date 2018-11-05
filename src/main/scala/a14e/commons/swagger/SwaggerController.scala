@@ -59,23 +59,11 @@ class SwaggerController(val configs: Config,
       }
     }
 
-  private def redirectWithUri: Route =
-    (get & extractRequest & sslEnabledDirective) { (request, sslEnabled) =>
-    val query = Query("url" -> swaggerJsonUriString(request.uri, sslEnabled))
-    val newUri = Uri("swagger/index.html").withQuery(query)
-    redirect(newUri, StatusCodes.TemporaryRedirect)
-  }
-
-  private def swaggerJsonUriString(uri: Uri,
-                                   sslEnabled: Boolean) = {
-    val scheme = if(sslEnabled) "https" else uri.scheme
-
-    s"$scheme://${uri.authority}/swagger/api-docs/swagger.json"
-  }
-
-  private def sslEnabledDirective: Directive1[Boolean] = {
-    optionalCookie(SslEnabledCookieName).map { cookie =>
-      cookie.exists(x => x.value.trim.toLowerCase == "true")
+  private def redirectWithUri: Route = {
+    get {
+      val query = Query("url" -> "/swagger/api-docs/swagger.json")
+      val newUri = Uri("swagger/index.html").withQuery(query)
+      redirect(newUri, StatusCodes.TemporaryRedirect)
     }
   }
 
