@@ -62,7 +62,7 @@ class SwaggerController(val configs: Config,
   private def redirectWithUri: Route = {
     get {
       val query = Query("url" -> "/swagger/api-docs/swagger.json")
-      val newUri = Uri("swagger/index.html").withQuery(query)
+      val newUri = Uri("/swagger/index.html").withQuery(query)
       redirect(newUri, StatusCodes.TemporaryRedirect)
     }
   }
