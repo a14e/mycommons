@@ -12,9 +12,8 @@ trait EnumFinder[ENUM <: Enumeration] {
 }
 
 
-
-trait FindableEnum extends Enumeration {
-  self =>
+trait FindableEnum {
+  self : Enumeration =>
 
 
 

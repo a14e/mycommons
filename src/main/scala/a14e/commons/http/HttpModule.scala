@@ -4,9 +4,11 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, handleExceptions, pathPrefix, _}
 import akka.http.scaladsl.server.{ExceptionHandler, Route, _}
 import a14e.commons.configs.{ConfigurationModule, ServerConfiguration}
-import a14e.commons.controller.{CustomAkkaDirectives, RoutesControlErrors}
+import a14e.commons.controller.{Controller, CustomAkkaDirectives, RoutesControlErrors}
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import a14e.commons.controller.Throwers._
+
+import scala.util.control.NonFatal
 
 trait HttpModule {
   this: LazyLogging
@@ -16,31 +18,40 @@ trait HttpModule {
 
   import RouteConcatenation._
 
-  def routes(logger: Logger): Route = {
+  def routes(logger: Logger,
+             versionString: String = "v1",
+             controllers: Seq[Controller] = this.controllers): Route = {
     val withRejectionHandling = controllers.map(_.route).reduce(_ ~ _)
     val withoutRejectionHandling = afterRejectControllers.map(_.route).reduce(_ ~ _)
-    val apiControllers = pathPrefix("api" / "v1")(withRejectionHandling)
+    val apiControllers = pathPrefix("api" / versionString)(withRejectionHandling)
 
-    handleExceptions(generateExceptionHandler) {
-      logData(logger, enableLogging, strictJson = true) {
+    logData(logger, enableLogging, strictJson = true) {
+      handleExceptions(generateExceptionHandler(logger)) {
         (handleRejections(rejectionHandler) & setCors(enableCors)) {
           apiControllers
         }
-      } ~
-      withoutRejectionHandling
-    }
+      }
+    } ~ withoutRejectionHandling
   }
 
-  private def generateExceptionHandler: ExceptionHandler =
+  private def generateExceptionHandler(logger: Logger): ExceptionHandler =
     ExceptionHandler {
-      case RoutesControlErrors.NotFound(text) => complete(StatusCodes.NotFound -> text)
-      case RoutesControlErrors.Unauthorized(text) => complete(StatusCodes.Unauthorized -> text)
-      case RoutesControlErrors.Forbidden(text) => complete(StatusCodes.Forbidden -> text)
-      case RoutesControlErrors.BadRequest(text) => complete(StatusCodes.BadRequest -> text)
-      case RoutesControlErrors.InternalServerError(text) => complete(StatusCodes.InternalServerError -> text)
-      case other =>
-        logger.warn("request completed with error =( ", other)
-        complete(StatusCodes.InternalServerError -> other.getMessage)
+      case NonFatal(err) =>
+        logger.warn("Response completed with error =(", err)
+        err match {
+          case RoutesControlErrors.NotFound(text) =>
+            complete(StatusCodes.NotFound -> text)
+          case RoutesControlErrors.Unauthorized(text) =>
+            complete(StatusCodes.Unauthorized -> text)
+          case RoutesControlErrors.Forbidden(text) =>
+            complete(StatusCodes.Forbidden -> text)
+          case RoutesControlErrors.BadRequest(text) =>
+            complete(StatusCodes.BadRequest -> text)
+          case RoutesControlErrors.InternalServerError(text) =>
+            complete(StatusCodes.InternalServerError -> text)
+          case other =>
+            complete(StatusCodes.InternalServerError -> other.getMessage)
+        }
     }
 
   private val rejectionHandler = RejectionHandler.newBuilder()
