@@ -18,13 +18,14 @@ trait TaggedEncoder[FROM, TO, TAG] {
   def encode(x: FROM): TO
 }
 
-
 trait TaggedDecoder[TO, FROM, TAG] {
 
   def decode(x: FROM): TO
 }
 
-trait TaggedEncodings[FROM, TO, TAG] extends TaggedEncoder[FROM, TO, TAG] with TaggedDecoder[FROM, TO, TAG]
+trait TaggedEncodings[FROM, TO, TAG]
+  extends TaggedEncoder[FROM, TO, TAG]
+    with TaggedDecoder[FROM, TO, TAG]
 
 
 trait AsTag {
@@ -39,9 +40,7 @@ trait AS[FROM, TAG <: AsTag] {
 object AsImplicits {
 
   implicit class RichTaggedEncodings[T](val x: T) extends AnyVal {
-    def as[B <: AsTag](implicit encoder: TaggedEncoder[T, B#TO, B]): B#TO = encoder.encode(x)
-
-    def from[B <: AsTag](implicit decoder: TaggedDecoder[B#TO, T, B]): B#TO = decoder.decode(x)
+    def as[B <: AsTag]()(implicit encoder: TaggedEncoder[T, B#TO, B]): B#TO = encoder.encode(x)
   }
 
 }
@@ -51,7 +50,6 @@ object AS {
   implicit def apply[FROM, TAG <: AsTag](from: FROM): AS[FROM, TAG] = AsImpl(from)
 
   implicit def from[T](as: AS[T, _]): T = as.value
-
 
   private case class AsImpl[FROM, TAG <: AsTag](value: FROM) extends AS[FROM, TAG] {
     override def toString: String = value.toString
@@ -92,6 +90,8 @@ object Base64 extends AsTag {
       override def decode(base64: String): Array[Byte] = BaseEncoding.base64().decode(base64)
     }
 }
+
+
 
 object Base64Url extends AsTag {
   type Base64Url = this.type

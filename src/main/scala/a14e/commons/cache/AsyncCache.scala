@@ -6,13 +6,13 @@ import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import ch.qos.logback.core.util.TimeUtil
-import a14e.commons.concurrent.SynchronizationManager
 import com.google.common.cache.CacheBuilder
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Success
 import scala.async.Async._
+import a14e.commons.concurrent.FutureImplicits._
 
 trait AsyncCache[KEY <: AnyRef, VALUE <: AnyRef] {
 
@@ -30,8 +30,7 @@ trait AsyncCache[KEY <: AnyRef, VALUE <: AnyRef] {
 // TODO возможно на других имплементация попробовать?
 class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
                                                      maxSize: Int,
-                                                     ttl: FiniteDuration,
-                                                     synchronizationManager: SynchronizationManager)
+                                                     ttl: FiniteDuration)
                                                     (implicit
                                                      context: ExecutionContext) extends AsyncCache[KEY, VALUE] {
 
@@ -43,33 +42,20 @@ class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
 
   override def put(key: KEY,
                    value: VALUE): Future[Unit] =  {
-    underlying.put(key, value)
-    Future.unit
+    Future.handle(underlying.put(key, value))
   }
 
   override def remove(key: KEY): Future[Unit] = {
-    underlying.invalidate(key)
-    Future.unit
+    Future.handle(underlying.invalidate(key))
   }
 
 
-  // TODO сделать тут кофеин
+  // TODO сделать тут каффеин для синхронизации (нужно ли?)
   override def cached(key: KEY)(block: => Future[VALUE]): Future[VALUE] = {
-    // двойная проверка, чтобы не нарываться лишний раз на синхронизацию
     get(key).flatMap {
       case Some(value) => Future.successful(value)
-      case _ =>
-        synchronizationManager.sync(key) { // тут возможны коллизии, но мы с ними готовы мириться)
-          get(key).flatMap {
-            case Some(res) => Future.successful(res)
-            case _ => block.andThen {
-              case Success(v) => put(key, v)
-            }
-          }
-        }
+      case _ => block.andThen { case Success(v) => put(key, v) }
     }
-
-
   }
 
   // TODO убрать транзакционну память

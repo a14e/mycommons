@@ -10,7 +10,7 @@ import a14e.commons.controller.Throwers._
 
 import scala.util.control.NonFatal
 
-trait HttpModule {
+trait HttpServerModule {
   this: LazyLogging
     with ControllersModule
     with CustomAkkaDirectives
@@ -20,9 +20,10 @@ trait HttpModule {
 
   def routes(logger: Logger,
              versionString: String = "v1",
-             controllers: Seq[Controller] = this.controllers): Route = {
-    val withRejectionHandling = controllers.map(_.route).reduce(_ ~ _)
-    val withoutRejectionHandling = afterRejectControllers.map(_.route).reduce(_ ~ _)
+             controllers: Seq[Controller] = this.controllers,
+             afterRejectControllers: Seq[Controller] = this.afterRejectControllers): Route = {
+    val withRejectionHandling = controllers.foldLeft(reject: Route)(_ ~ _.route)
+    val withoutRejectionHandling = afterRejectControllers.foldLeft(reject: Route)(_ ~ _.route)
     val apiControllers = pathPrefix("api" / versionString)(withRejectionHandling)
 
     logData(logger, enableLogging, strictJson = true) {
@@ -49,8 +50,8 @@ trait HttpModule {
             complete(StatusCodes.BadRequest -> text)
           case RoutesControlErrors.InternalServerError(text) =>
             complete(StatusCodes.InternalServerError -> text)
-          case other =>
-            complete(StatusCodes.InternalServerError -> other.getMessage)
+          case _ =>
+            complete(StatusCodes.InternalServerError -> "Server error. Try again latter")
         }
     }
 

@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.3.06"
+version := "0.3.07"
 
 
 organization := "com.github.a14e"
@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % playJsonVersion,
 
 
-  "com.google.guava" % "guava" % "25.1-jre", // для полезных утилит (пока только кэш)
+  "com.google.guava" % "guava" % "27.0.1-jre", // для полезных утилит (пока только кэш)
+//  "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",
 
   /** чтобы гуава не жаловалась */
   "com.google.code.findbugs" % "jsr305" % "3.0.1",

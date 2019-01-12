@@ -7,7 +7,7 @@ trait TimeService {
   def now: Instant
 }
 
-class TimeServiceImpl extends TimeService {
+final class TimeServiceImpl extends TimeService {
   override def now: Instant = Instant.now()
 }
 

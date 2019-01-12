@@ -4,7 +4,6 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import a14e.commons.cache.configuration.CacheManagerConfigs
 import a14e.commons.cache.{AsyncCache, AsyncCacheImpl}
-import a14e.commons.concurrent.SynchronizationManagerFactory
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -15,8 +14,7 @@ trait CacheManager {
 }
 
 
-class CacheManagerImpl(allConfigs: CacheManagerConfigs,
-                       synchronizationManagerFactory: SynchronizationManagerFactory)
+class CacheManagerImpl(allConfigs: CacheManagerConfigs)
                       (implicit
                        context: ExecutionContext,
                        materializer: Materializer) extends CacheManager {
@@ -26,15 +24,12 @@ class CacheManagerImpl(allConfigs: CacheManagerConfigs,
 
   override def cache[KEY <: AnyRef, VALUE <: AnyRef](name: String): AsyncCache[KEY, VALUE] = this.synchronized {
 
-    // todo поменять на гуаву
     def buildCache(): AsyncCache[AnyRef, AnyRef] = {
       val configs = allConfigs.namedCacheConfigs.getOrElse(name, allConfigs.defaultCacheConfigs)
-      val syncManager = synchronizationManagerFactory.manager(name)
       val cache = new AsyncCacheImpl[KEY, VALUE](
-        name,
-        configs.maxSize,
-        configs.ttl,
-        syncManager
+        name = name,
+        maxSize = configs.maxSize,
+        ttl = configs.ttl
       )
       cache.asInstanceOf[AsyncCache[AnyRef, AnyRef]]
     }
