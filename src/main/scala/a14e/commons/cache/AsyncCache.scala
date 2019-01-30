@@ -1,6 +1,6 @@
 package a14e.commons.cache
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Callable, TimeUnit}
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
@@ -10,9 +10,12 @@ import com.google.common.cache.CacheBuilder
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration.FiniteDuration
-import scala.util.Success
+import scala.util.{Failure, Success}
 import scala.async.Async._
 import a14e.commons.concurrent.FutureImplicits._
+import a14e.commons.concurrent.FutureUtils
+
+import scala.util.control.NonFatal
 
 trait AsyncCache[KEY <: AnyRef, VALUE <: AnyRef] {
 
@@ -36,13 +39,14 @@ class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
 
 
   override def get(key: KEY): Future[Option[VALUE]] = {
-    val found = Option(underlying.getIfPresent(key))
-    Future.successful(found)
+    val found = underlying.getIfPresent(key)
+    if(found == null) Future.successful(None)
+    else found.map(Some.apply)(FutureUtils.sameThreadExecutionContext)
   }
 
   override def put(key: KEY,
                    value: VALUE): Future[Unit] =  {
-    Future.handle(underlying.put(key, value))
+    Future.handle(underlying.put(key, Future.successful(value)))
   }
 
   override def remove(key: KEY): Future[Unit] = {
@@ -52,9 +56,8 @@ class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
 
   // TODO сделать тут каффеин для синхронизации (нужно ли?)
   override def cached(key: KEY)(block: => Future[VALUE]): Future[VALUE] = {
-    get(key).flatMap {
-      case Some(value) => Future.successful(value)
-      case _ => block.andThen { case Success(v) => put(key, v) }
+    underlying.get(key, () => block).andThen {
+      case Failure(_) => underlying.invalidate(key)
     }
   }
 
@@ -62,5 +65,5 @@ class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
   private val underlying = CacheBuilder.newBuilder()
     .maximumSize(maxSize)
     .expireAfterWrite(ttl.toMillis, TimeUnit.MILLISECONDS)
-    .build[KEY, VALUE]()
+    .build[KEY, Future[VALUE]]()
 }

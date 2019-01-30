@@ -2,14 +2,16 @@ package a14e.commons.controller
 
 object Throwers {
 
-  def notFound[T](text: String = ""): T = throw RoutesControlErrors.NotFound(text: String)
+  def failWith[T](err: Throwable): T = throw err
 
-  def unauthorized[T](text: String = ""): T = throw RoutesControlErrors.Unauthorized(text: String)
+  def failWithNotFound[T](text: String = ""): T = throw RoutesControlErrors.NotFound(text: String)
 
-  def forbidden[T](text: String = ""): T = throw RoutesControlErrors.Forbidden(text: String)
+  def failWithUnauthorized[T](text: String = ""): T = throw RoutesControlErrors.Unauthorized(text: String)
 
-  def badRequest[T](text: String = ""): T = throw RoutesControlErrors.BadRequest(text: String)
+  def failWithForbidden[T](text: String = ""): T = throw RoutesControlErrors.Forbidden(text: String)
 
-  def internalServerError[T](text: String = ""): T = throw RoutesControlErrors.InternalServerError(text: String)
+  def failWithBadRequest[T](text: String = ""): T = throw RoutesControlErrors.BadRequest(text: String)
+
+  def failWithInternalServerError[T](text: String = ""): T = throw RoutesControlErrors.InternalServerError(text: String)
 }
 
