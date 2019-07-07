@@ -2,24 +2,29 @@ package a14e.commons.swagger
 
 import com.github.swagger.akka._
 import com.github.swagger.akka.model.Info
-import io.swagger.annotations.Api
-import io.swagger.models.{ExternalDocs, Scheme}
-import io.swagger.models.auth.BasicAuthDefinition
+import io.swagger.v3.oas.models.security.SecurityScheme
+import javax.ws.rs.Path
 import org.reflections.Reflections
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class SwaggerDocService(reflectionPath: String,
-                        override val schemes: List[Scheme] =  List(Scheme.HTTP, Scheme.HTTPS)) extends SwaggerHttpService  {
+                        override val schemes: List[String] = List("http", "https")) extends SwaggerHttpService {
   override lazy val apiClasses: Set[Class[_]] = classesWithApiAnnotation().toSet
 
   override val apiDocsPath: String = "api-docs"
   override val info = Info(version = "1.0")
   override val externalDocs = None
-  override val securitySchemeDefinitions = Map("basicAuth" -> new BasicAuthDefinition())
+  override val securitySchemes = Map("basicAuth" -> {
+    val res = new SecurityScheme()
+    res.setType(SecurityScheme.Type.HTTP)
+    res.setScheme("basic")
+    res
+  })
+
 
   private def classesWithApiAnnotation(): Seq[Class[_]] = {
     val ref = new Reflections(reflectionPath)
-    val annotatedJavaList = ref.getTypesAnnotatedWith(classOf[Api])
+    val annotatedJavaList = ref.getTypesAnnotatedWith(classOf[Path])
     annotatedJavaList.asScala.toList
   }
 

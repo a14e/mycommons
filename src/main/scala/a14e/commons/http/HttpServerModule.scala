@@ -28,7 +28,7 @@ trait HttpServerModule {
 
     logData(logger, enableLogging, strictJson = true) {
       handleExceptions(generateExceptionHandler(logger)) {
-        (handleRejections(rejectionHandler) & setCors(enableCors)) {
+        (handleRejections(rejectionHandler)) {
           apiControllers
         }
       }

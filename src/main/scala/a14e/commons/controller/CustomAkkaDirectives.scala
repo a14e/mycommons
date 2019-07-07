@@ -13,8 +13,6 @@ import akka.http.scaladsl.server.directives.RespondWithDirectives.respondWithHea
 import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.server.directives.BasicDirectives.{extractRequestContext, mapRouteResult}
 import akka.stream.Materializer
-import ch.megard.akka.http.cors.scaladsl.CorsDirectives
-import ch.megard.akka.http.cors.scaladsl.settings.CorsSettings
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 
 import scala.collection.immutable
@@ -89,11 +87,6 @@ trait CustomAkkaDirectives {
     }
   }
 
-  def setCors(enabled: Boolean): Directive0 = {
-    if (!enabled) pass
-    else CorsDirectives
-      .cors(CorsSettings.defaultSettings.copy(allowedMethods = allowedMethods))
-  }
 
   def userAgentHeader: Directive1[Option[`User-Agent`]] =
     HeaderDirectives.optionalHeaderValueByType[`User-Agent`]((): Unit)

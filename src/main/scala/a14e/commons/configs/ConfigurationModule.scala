@@ -13,5 +13,4 @@ trait ConfigurationModule {
 trait ServerConfiguration {
 
   def enableLogging: Boolean
-  def enableCors: Boolean
 }
