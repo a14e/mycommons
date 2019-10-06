@@ -10,7 +10,7 @@ import a14e.commons.controller.Controller
 import a14e.commons.http.HttpConfigs
 import akka.http.scaladsl.server.{Directive, Directive1}
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.Logger
+import com.typesafe.scalalogging.{LazyLogging, Logger}
 import org.webjars.WebJarAssetLocator
 import net.ceedubs.ficus.Ficus._
 
@@ -22,7 +22,7 @@ class SwaggerController(val configs: Config,
                         val swaggerDocService: SwaggerDocService)
                        (implicit
                         val system: ActorSystem,
-                        val materializer: Materializer) extends Controller {
+                        val materializer: Materializer) extends Controller with LazyLogging {
 
   import akka.actor.ActorSystem
   import akka.http.scaladsl.server.Directives._
@@ -33,7 +33,7 @@ class SwaggerController(val configs: Config,
 
   def init(): Unit = {
     if (enabled)
-      logs.info(s"see swagger on $swaggerUri")
+      logger.info(s"see swagger on $swaggerUri")
   }
 
   override lazy val route: Route =
@@ -67,11 +67,7 @@ class SwaggerController(val configs: Config,
     }
   }
 
-  val SslEnabledCookieName = "X-Ssl-Enabled"
-
   private lazy val swaggerUri = s"http://${mainConfigs.host}:${mainConfigs.port}/swagger"
-
-  private lazy val logs = Logger[this.type]
 
   private lazy val enabled = configs.as[Option[Boolean]]("swagger.enabled").getOrElse(false)
 

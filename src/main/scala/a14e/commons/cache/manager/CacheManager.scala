@@ -38,6 +38,7 @@ class CacheManagerImpl(allConfigs: CacheManagerConfigs)
   }
 
 
+  // нужна ли вообще тут синхронизация?)
   private val underlying = new mutable.HashMap[String, AsyncCache[AnyRef, AnyRef]]
 
 }

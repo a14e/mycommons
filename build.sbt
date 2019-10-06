@@ -1,12 +1,12 @@
 
 name := "mycommons"
 
-version := "0.3.08"
+version := "0.3.09"
 
 
 organization := "com.github.a14e"
 
-scalaVersion := "2.13.0"
+scalaVersion := "2.13.1"
 
 
 val akkaHttpVersion = "10.1.8"
@@ -29,7 +29,7 @@ libraryDependencies ++= Seq(
 
 
   "com.google.guava" % "guava" % "27.0.1-jre", // для полезных утилит (пока только кэш)
-//  "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",
+ "com.github.ben-manes.caffeine" % "caffeine" % "2.8.0",
 
   /** чтобы гуава не жаловалась */
   "com.google.code.findbugs" % "jsr305" % "3.0.1",

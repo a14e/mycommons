@@ -1,25 +1,19 @@
 package a14e.commons.cache
 
-import java.util.concurrent.{Callable, TimeUnit}
-
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
-import ch.qos.logback.core.util.TimeUtil
-import com.google.common.cache.CacheBuilder
-
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Failure, Success}
-import scala.async.Async._
-import a14e.commons.concurrent.FutureImplicits._
-import a14e.commons.concurrent.FutureUtils
+import scala.util.Failure
+import scala.concurrent.ExecutionContext
+import com.github.benmanes.caffeine.cache.Caffeine
 
 import scala.util.control.NonFatal
 
 trait AsyncCache[KEY <: AnyRef, VALUE <: AnyRef] {
 
   def get(key: KEY): Future[Option[VALUE]]
+
+  def contains(key: KEY): Future[Boolean]
 
   def put(key: KEY,
           value: VALUE): Future[Unit]
@@ -40,30 +34,40 @@ class AsyncCacheImpl[KEY <: AnyRef, VALUE <: AnyRef](name: String,
 
   override def get(key: KEY): Future[Option[VALUE]] = {
     val found = underlying.getIfPresent(key)
-    if(found == null) Future.successful(None)
-    else found.map(Some.apply)(FutureUtils.sameThreadExecutionContext)
+    if (found == null) Future.successful(None)
+    else found.map(Some.apply)(ExecutionContext.parasitic)
   }
 
   override def put(key: KEY,
                    value: VALUE): Future[Unit] =  {
-    Future.handle(underlying.put(key, Future.successful(value)))
+    Future.successful(underlying.put(key, Future.successful(value)))
   }
 
   override def remove(key: KEY): Future[Unit] = {
-    Future.handle(underlying.invalidate(key))
+    Future.successful(underlying.invalidate(key))
   }
 
+  override def contains(key: KEY): Future[Boolean] = {
+    val hasKey = underlying.getIfPresent(key) != null
+    Future.successful(hasKey)
+  }
 
   // TODO сделать тут каффеин для синхронизации (нужно ли?)
   override def cached(key: KEY)(block: => Future[VALUE]): Future[VALUE] = {
-    underlying.get(key, () => block).andThen {
+    underlying.get(key, {
+      _: KEY =>
+        try block catch {
+          case NonFatal(e) => Future.failed(e)
+        }
+    }).andThen {
       case Failure(_) => underlying.invalidate(key)
     }
   }
 
   // TODO убрать транзакционну память
-  private val underlying = CacheBuilder.newBuilder()
+  private val underlying = Caffeine.newBuilder()
     .maximumSize(maxSize)
     .expireAfterWrite(ttl.toMillis, TimeUnit.MILLISECONDS)
     .build[KEY, Future[VALUE]]()
+
 }

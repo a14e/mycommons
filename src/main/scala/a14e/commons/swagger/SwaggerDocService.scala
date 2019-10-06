@@ -8,8 +8,9 @@ import org.reflections.Reflections
 import scala.jdk.CollectionConverters._
 
 class SwaggerDocService(reflectionPath: String,
-                        override val schemes: List[String] = List("http", "https")) extends SwaggerHttpService {
-  override lazy val apiClasses: Set[Class[_]] = classesWithApiAnnotation().toSet
+                        override val schemes: List[String] = List("http", "https"),
+                        classes: Seq[Class[_]]) extends SwaggerHttpService {
+  override lazy val apiClasses: Set[Class[_]] = classes.toSet
 
   override val apiDocsPath: String = "api-docs"
   override val info = Info(version = "1.0")
@@ -20,13 +21,6 @@ class SwaggerDocService(reflectionPath: String,
     res.setScheme("basic")
     res
   })
-
-
-  private def classesWithApiAnnotation(): Seq[Class[_]] = {
-    val ref = new Reflections(reflectionPath)
-    val annotatedJavaList = ref.getTypesAnnotatedWith(classOf[Path])
-    annotatedJavaList.asScala.toList
-  }
 
 }
 
