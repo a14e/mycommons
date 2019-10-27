@@ -8,6 +8,8 @@ import play.api.libs.functional.syntax._
 
 trait TaggedEncodings {
 
+  import AS.implicits._
+
   implicit def taggedJsonEncoder[T, B <: AsTag](implicit
                                                 encoder: TaggedEncoder[T, B#TO, B],
                                                 toEncoder: Writes[B#TO]): Writes[AS[T, B]] =

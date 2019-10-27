@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.3.09"
+version := "0.3.10"
 
 
 organization := "com.github.a14e"
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
 
 
   // для сваггера
-  "com.github.swagger-akka-http" %% "swagger-akka-http" % "2.0.3",
+  "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.0",
   "org.webjars" % "swagger-ui" % "3.0.10",
   "org.webjars" % "webjars-locator" % "0.32",
 
@@ -79,43 +79,43 @@ publishArtifact in Test := false
 ////////////////////
 // publishing
 
-pomExtra := {
-  <url>https://github.com/a14e/mycommons/</url>
-    <licenses>
-      <license>
-        <name>MIT</name>
-        <url>https://github.com/a14e/mycommons/blob/master/LICENSE.txt</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
-    <scm>
-      <connection>scm:git:git@github.com:a14e/mycommons.git</connection>
-      <url>https://github.com/a14e/mycommons.git</url>
-    </scm>
-    <developers>
-      <developer>
-        <id>AndrewInstance</id>
-        <name>Andrew</name>
-        <email>m0hct3r@gmail.com</email>
-      </developer>
-    </developers>
-}
-
-publishMavenStyle := true
-
-publishTo := {
-  val base = "https://oss.sonatype.org/"
-  if (version.value.trim.endsWith("SNAPSHOT"))
-    Some("snapshots" at base + "content/repositories/snapshots/")
-  else
-    Some("releases" at base + "service/local/staging/deploy/maven2/")
-}
-//credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
-
-// только чтобы переписывать фаилы при сборке по http://stackoverflow.com/questions/27530507/sbt-publish-only-when-version-does-not-exist
-isSnapshot := true
-
-pomIncludeRepository := { x => false }
-
-pgpReadOnly := false
+//pomExtra := {
+//  <url>https://github.com/a14e/mycommons/</url>
+//    <licenses>
+//      <license>
+//        <name>MIT</name>
+//        <url>https://github.com/a14e/mycommons/blob/master/LICENSE.txt</url>
+//        <distribution>repo</distribution>
+//      </license>
+//    </licenses>
+//    <scm>
+//      <connection>scm:git:git@github.com:a14e/mycommons.git</connection>
+//      <url>https://github.com/a14e/mycommons.git</url>
+//    </scm>
+//    <developers>
+//      <developer>
+//        <id>AndrewInstance</id>
+//        <name>Andrew</name>
+//        <email>m0hct3r@gmail.com</email>
+//      </developer>
+//    </developers>
+//}
+//
+//publishMavenStyle := true
+//
+//publishTo := {
+//  val base = "https://oss.sonatype.org/"
+//  if (version.value.trim.endsWith("SNAPSHOT"))
+//    Some("snapshots" at base + "content/repositories/snapshots/")
+//  else
+//    Some("releases" at base + "service/local/staging/deploy/maven2/")
+//}
+////credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+//
+//// только чтобы переписывать фаилы при сборке по http://stackoverflow.com/questions/27530507/sbt-publish-only-when-version-does-not-exist
+//isSnapshot := true
+//
+//pomIncludeRepository := { x => false }
+//
+////pgpReadOnly := false
 //useGpg := true

@@ -47,9 +47,15 @@ object AsImplicits {
 
 
 object AS {
-  implicit def apply[FROM, TAG <: AsTag](from: FROM): AS[FROM, TAG] = AsImpl(from)
+  def from[FROM, TAG <: AsTag](from: FROM): AS[FROM, TAG] = AsImpl(from)
 
-  implicit def from[T](as: AS[T, _]): T = as.value
+  def value[T](as: AS[T, _]): T = as.value
+
+  object implicits {
+    implicit def toAsTag[FROM, TAG <: AsTag](from: FROM): AS[FROM, TAG] = AsImpl(from)
+
+    implicit def fromAsTag[T](as: AS[T, _]): T = as.value
+  }
 
   private case class AsImpl[FROM, TAG <: AsTag](value: FROM) extends AS[FROM, TAG] {
     override def toString: String = value.toString
