@@ -11,7 +11,7 @@ import scala.collection.JavaConverters._
 class SwaggerDocService(reflectionPath: String,
                         controllersClasses: Seq[Class[_]],
                         override val schemes: List[Scheme] =  List(Scheme.HTTP, Scheme.HTTPS)) extends SwaggerHttpService  {
-  override lazy val apiClasses: Set[Class[_]] = controllersClasses().toSet
+  override lazy val apiClasses: Set[Class[_]] = Set.from(controllersClasses)
 
   override val apiDocsPath: String = "api-docs"
   override val info = Info(version = "1.0")
