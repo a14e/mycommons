@@ -60,7 +60,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % "test",
 
   "org.reflections" % "reflections" % "0.9.10",
-  "javax.ws.rs" % "javax.ws.rs-api" % "2.0",
 
   "org.mindrot" % "jbcrypt" % "0.4"
 )

@@ -1,9 +1,12 @@
 package a14e.commons.services
 
+import com.softwaremill.macwire._
+
 trait UtilsModule {
 
-  lazy val timeServiceImpl: TimeService = new TimeServiceImpl
-  lazy val idServiceImpl: RandomGeneratingService = new RandomGeneratingServiceImpl
+  lazy val currentRunService: CurrentRunService = wire[CurrentRunServiceImpl]
+  lazy val timeService: TimeService = wire[TimeServiceImpl]
+  lazy val randomGeneratingService: RandomGeneratingService = wire[RandomGeneratingServiceImpl]
 }
 
 

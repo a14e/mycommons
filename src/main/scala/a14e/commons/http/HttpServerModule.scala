@@ -12,7 +12,6 @@ import scala.util.control.NonFatal
 
 trait HttpServerModule {
   this: LazyLogging
-    with ControllersModule
     with CustomAkkaDirectives
     with ServerConfiguration =>
 
@@ -20,8 +19,8 @@ trait HttpServerModule {
 
   def routes(logger: Logger,
              versionString: String = "v1",
-             controllers: Seq[Controller] = this.controllers,
-             afterRejectControllers: Seq[Controller] = this.afterRejectControllers): Route = {
+             controllers: Seq[Controller],
+             afterRejectControllers: Seq[Controller]): Route = {
     val withRejectionHandling = controllers.foldLeft(reject: Route)(_ ~ _.route)
     val withoutRejectionHandling = afterRejectControllers.foldLeft(reject: Route)(_ ~ _.route)
     val apiControllers = pathPrefix("api" / versionString)(withRejectionHandling)

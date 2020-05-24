@@ -40,7 +40,7 @@ trait CustomAkkaDirectives {
       else {
         val requestId = "request-" + UUID.randomUUID().toString
         debuggingRequestResponse(requestId, logger) &
-        respondWithDefaultHeader(RawHeader("Request-Id", requestId))
+          respondWithDefaultHeader(RawHeader("Request-Id", requestId))
       }
     }
 
@@ -52,11 +52,11 @@ trait CustomAkkaDirectives {
     extractRequest.flatMap { request =>
       if (request.entity.contentType == ContentTypes.`application/json`) {
         toStrictEntity(strictJsonTimeout) &
-        mapRequest { request =>
-          // так как тип иногда бывает binary, надо подкорректировать
-          val newEntity = request.entity.withContentType(ContentTypes.`application/json`)
-          request.withEntity(newEntity)
-        }
+          mapRequest { request =>
+            // так как тип иногда бывает binary, надо подкорректировать
+            val newEntity = request.entity.withContentType(ContentTypes.`application/json`)
+            request.withEntity(newEntity)
+          }
 
       } else pass
     }
@@ -64,23 +64,21 @@ trait CustomAkkaDirectives {
   def debuggingRequestResponse(requestId: String,
                                logger: Logger): Directive0 = {
     extractRequestContext.flatMap { ctx ⇒
-      val logRequestText =
+
+      logger.info(
         s"""
-          |Request:
-          |requestId = $requestId
-          |request = ${ctx.request}
-        """.stripMargin
-      logger.info(logRequestText)
+           |Request:
+           |requestId = $requestId
+           |request = ${ctx.request}""".stripMargin)
 
       mapRouteResult { result ⇒
 
-        val logResultText =
+        logger.info(
           s"""
              |Response:
              |requestId = $requestId
              |response = $result
-        """.stripMargin
-        logger.info(logResultText)
+        """.stripMargin)
 
         result
       }

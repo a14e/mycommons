@@ -3,6 +3,7 @@ package a14e.commons.services
 import java.security.SecureRandom
 import java.util.UUID
 
+import scala.collection.BuildFrom
 import scala.collection.generic.CanBuildFrom
 import scala.util.Random
 
@@ -20,7 +21,7 @@ trait RandomGeneratingService {
 
   def generateNumber(): Int
 
-  def shuffle[T, COL[X] <: TraversableOnce[X]](xs: COL[T])(implicit bf: CanBuildFrom[COL[T], T, COL[T]]): COL[T]
+  def shuffle[T, C](xs: IterableOnce[T])(implicit bf: BuildFrom[xs.type, T, C]): C
 }
 
 final class RandomGeneratingServiceImpl extends RandomGeneratingService {
@@ -38,8 +39,7 @@ final class RandomGeneratingServiceImpl extends RandomGeneratingService {
 
   override def generateNumber(): Int = random.nextInt()
 
-  override def shuffle[T, COL[X] <: TraversableOnce[X]](xs: COL[T])
-                                                       (implicit bf: CanBuildFrom[COL[T], T, COL[T]]): COL[T] = {
+  override def shuffle[T, C](xs: IterableOnce[T])(implicit bf: BuildFrom[xs.type, T, C]): C = {
     random.shuffle(xs)
   }
 
