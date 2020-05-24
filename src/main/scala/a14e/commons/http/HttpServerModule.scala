@@ -3,7 +3,7 @@ package a14e.commons.http
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives.{complete, handleExceptions, pathPrefix, _}
 import akka.http.scaladsl.server.{ExceptionHandler, Route, _}
-import a14e.commons.configs.{ConfigurationModule, ServerConfiguration}
+import a14e.commons.configs.ConfigurationModule
 import a14e.commons.controller.{Controller, CustomAkkaDirectives, RoutesControlErrors}
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import a14e.commons.controller.Throwers._
@@ -12,8 +12,7 @@ import scala.util.control.NonFatal
 
 trait HttpServerModule {
   this: LazyLogging
-    with CustomAkkaDirectives
-    with ServerConfiguration =>
+    with CustomAkkaDirectives =>
 
   import RouteConcatenation._
 
@@ -25,7 +24,7 @@ trait HttpServerModule {
     val withoutRejectionHandling = afterRejectControllers.foldLeft(reject: Route)(_ ~ _.route)
     val apiControllers = pathPrefix("api" / versionString)(withRejectionHandling)
 
-    logData(logger, enableLogging, strictJson = true) {
+    logData(logger, strictJson = true) {
       handleExceptions(generateExceptionHandler(logger)) {
         (handleRejections(rejectionHandler)) {
           apiControllers

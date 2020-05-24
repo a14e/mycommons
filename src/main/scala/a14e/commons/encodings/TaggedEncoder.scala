@@ -77,79 +77,7 @@ object NumberEnum extends AsTag {
     }
 }
 
-object Base64 extends AsTag {
-  type Base64 = this.type
 
-  override type TO = String
-
-  implicit val byteStingEncodings: TaggedEncodings[ByteString, String, Base64] =
-    new TaggedEncodings[ByteString, String, Base64] {
-      override def encode(x: ByteString): String = {
-        BaseEncoding.base64().lowerCase().encode(x.toArray)
-      }
-
-      override def decode(base64: String): ByteString = {
-        ByteString(BaseEncoding.base64().lowerCase().decode(base64))
-      }
-    }
-
-  implicit val arrayEncodings: TaggedEncodings[Array[Byte], String, Base64] =
-    new TaggedEncodings[Array[Byte], String, Base64] {
-      override def encode(x: Array[Byte]): String = BaseEncoding.base64().lowerCase().encode(x)
-
-      override def decode(base64: String): Array[Byte] = BaseEncoding.base64().lowerCase().decode(base64)
-    }
-}
-
-
-
-object Base64Url extends AsTag {
-  type Base64Url = this.type
-
-  override type TO = String
-
-  implicit val byteStingEncodings: TaggedEncodings[ByteString, String, Base64Url] =
-    new TaggedEncodings[ByteString, String, Base64Url] {
-      override def encode(x: ByteString): String = {
-        BaseEncoding.base64Url().lowerCase().encode(x.toArray)
-      }
-
-      override def decode(base64: String): ByteString = {
-        ByteString(BaseEncoding.base64Url().lowerCase().decode(base64))
-      }
-    }
-
-  implicit val arrayEncodings: TaggedEncodings[Array[Byte], String, Base64Url] =
-    new TaggedEncodings[Array[Byte], String, Base64Url] {
-      override def encode(x: Array[Byte]): String = BaseEncoding.base64Url().lowerCase().encode(x)
-
-      override def decode(base64: String): Array[Byte] = BaseEncoding.base64Url().lowerCase().decode(base64)
-    }
-}
-
-object Hex extends AsTag {
-  type Hex = this.type
-
-  override type TO = String
-
-  implicit val byteStingEncodings: TaggedEncodings[ByteString, String, Hex] =
-    new TaggedEncodings[ByteString, String, Hex] {
-      override def encode(x: ByteString): String = {
-        BaseEncoding.base16().lowerCase().encode(x.toArray)
-      }
-
-      override def decode(base64: String): ByteString = {
-        ByteString(BaseEncoding.base16().lowerCase().decode(base64))
-      }
-    }
-
-  implicit val arrayEncodings: TaggedEncodings[Array[Byte], String, Hex] =
-    new TaggedEncodings[Array[Byte], String, Hex] {
-      override def encode(x: Array[Byte]): String = BaseEncoding.base16().lowerCase().encode(x)
-
-      override def decode(base64: String): Array[Byte] = BaseEncoding.base16().lowerCase().decode(base64)
-    }
-}
 
 
 object StringValue extends AsTag {

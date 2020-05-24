@@ -9,8 +9,3 @@ trait ConfigurationModule {
 
 }
 
-
-trait ServerConfiguration {
-
-  def enableLogging: Boolean
-}

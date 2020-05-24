@@ -30,18 +30,15 @@ trait CustomAkkaDirectives {
   }
 
   def logData(logger: Logger,
-              enabled: Boolean,
               strictJson: Boolean,
               strictJsonTimeout: FiniteDuration = 200.seconds): Directive0 = {
     val strictJsonDirective = if (!strictJson) pass else correctAndToStrictIfJson(strictJsonTimeout)
 
     val loggingDirective = {
-      if (!enabled) pass
-      else {
-        val requestId = "request-" + UUID.randomUUID().toString
-        debuggingRequestResponse(requestId, logger) &
-          respondWithDefaultHeader(RawHeader("Request-Id", requestId))
-      }
+      val requestId = "request-" + UUID.randomUUID().toString
+      debuggingRequestResponse(requestId, logger) &
+        respondWithDefaultHeader(RawHeader("Request-Id", requestId))
+
     }
 
     strictJsonDirective & loggingDirective

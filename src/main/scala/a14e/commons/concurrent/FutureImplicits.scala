@@ -1,26 +1,21 @@
 package a14e.commons.concurrent
 
-import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
-
-import scala.collection.generic.CanBuildFrom
-import scala.language.{higherKinds, implicitConversions}
+import scala.language.implicitConversions
 import scala.util.Try
-import scala.util.control.NonFatal
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.concurrent.duration._
-import akka.util.Timeout._
-import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture._
 import akka.http.scaladsl.util.FastFuture
-import FutureImplicits._
-import akka.actor.{ActorSystem, Cancellable}
-import com.typesafe.scalalogging.Logger
+import scala.collection.BuildFrom
 
 
 object FutureImplicits {
   implicit def Future2RichFuture[T](f: Future[T]): RichFuture[T] = new RichFuture[T](f)
 
   implicit def FutureObj2RichFuture(f: Future.type): RichFutureObj.type = RichFutureObj
+
+  object ParasiticContext {
+    implicit def parasiticExecutionContext: ExecutionContext = ExecutionContext.parasitic
+  }
 }
 
 class RichFuture[T](val future: Future[T]) extends AnyVal {
@@ -38,11 +33,12 @@ class RichFuture[T](val future: Future[T]) extends AnyVal {
 
 object RichFutureObj {
 
-  def serially[T, M[X] <: TraversableOnce[X], B](coll: M[T])
-                                                (fun: T => Future[B])
-                                                (implicit
-                                                 context: ExecutionContext,
-                                                 canBuildFrom: CanBuildFrom[M[T], B, M[B]]): Future[M[B]] = {
+  def serially[T, M[X] <: Iterable[X], B](coll: M[T])
+                                         (fun: T => Future[B])
+                                         (implicit
+                                          canBuildFrom: BuildFrom[M[T], B, M[B]]): Future[M[B]] = {
+    implicit def parasiticContext = ExecutionContext.parasitic
+
     val init = Future.successful(canBuildFrom(coll))
     coll.foldLeft(init) { (pevFuture, current) =>
       for {
@@ -51,6 +47,23 @@ object RichFutureObj {
       } yield builder += next
     }.fast
      .map(_.result())
+  }
+
+
+  def batchTraverse[T, M[X] <: Iterable[X], B](coll: M[T], batchSize: Int)
+                                              (fun: T => Future[B])
+                                              (implicit
+                                               canBuildFrom: BuildFrom[M[T], B, M[B]]): Future[M[B]] = {
+    implicit def parasiticContext = ExecutionContext.parasitic
+
+    val init = Future.successful(canBuildFrom(coll))
+    val grouped = coll.grouped(batchSize)
+    grouped.foldLeft(init) { (pevFuture, group) =>
+      for {
+        builder <- pevFuture.fast
+        next <- Future.traverse(group)(fun).fast
+      } yield builder ++= next
+    }.map(_.result())
   }
 
   def handleWith[T](block: => Future[T]): Future[T] = {
