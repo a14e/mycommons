@@ -1,10 +1,6 @@
 package a14e.commons.crypto
 
-import com.google.common.io.BaseEncoding
 import a14e.commons.crypto.HmacAlgorithm.HmacAlgorithm
-import a14e.commons.encodings.AsImplicits._
-import a14e.commons.encodings.Base64.Base64
-import a14e.commons.encodings.Hex.Hex
 import akka.util.ByteString
 
 object HmacHashing {

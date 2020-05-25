@@ -1,7 +1,5 @@
 package a14e.commons.collection
 
-import scala.collection.{BuildFrom, IterableOnce, IterableOps, mutable}
-
 object CollectionImplicits {
 
   implicit class RichMap[K, V](val map: Map[K, V]) extends AnyVal {
@@ -9,6 +7,4 @@ object CollectionImplicits {
 
     def filterValues(f: V => Boolean): Map[K, V] = map.collect { case (k, v) if f(v) => k -> v }
   }
-
-
 }
