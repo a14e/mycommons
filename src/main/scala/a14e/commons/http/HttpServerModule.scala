@@ -7,6 +7,7 @@ import a14e.commons.configs.ConfigurationModule
 import a14e.commons.controller.{Controller, CustomAkkaDirectives, RoutesControlErrors}
 import com.typesafe.scalalogging.{LazyLogging, Logger}
 import a14e.commons.controller.Throwers._
+import play.api.libs.json.Json
 
 import scala.util.control.NonFatal
 
@@ -33,25 +34,28 @@ trait HttpServerModule {
     } ~ withoutRejectionHandling
   }
 
+  import de.heikoseeberger.akkahttpplayjson.PlayJsonSupport._
   private def generateExceptionHandler(logger: Logger): ExceptionHandler =
     ExceptionHandler {
       case NonFatal(err) =>
         logger.warn("Response completed with error =(", err)
         err match {
           case RoutesControlErrors.NotFound(text) =>
-            complete(StatusCodes.NotFound -> text)
+            complete(StatusCodes.NotFound -> responseErr(text))
           case RoutesControlErrors.Unauthorized(text) =>
-            complete(StatusCodes.Unauthorized -> text)
+            complete(StatusCodes.Unauthorized -> responseErr(text))
           case RoutesControlErrors.Forbidden(text) =>
-            complete(StatusCodes.Forbidden -> text)
+            complete(StatusCodes.Forbidden -> responseErr(text))
           case RoutesControlErrors.BadRequest(text) =>
-            complete(StatusCodes.BadRequest -> text)
+            complete(StatusCodes.BadRequest -> responseErr(text))
           case RoutesControlErrors.InternalServerError(text) =>
-            complete(StatusCodes.InternalServerError -> text)
+            complete(StatusCodes.InternalServerError -> responseErr(text))
           case _ =>
-            complete(StatusCodes.InternalServerError -> "Server error. Try again latter")
+            complete(StatusCodes.InternalServerError -> responseErr("Server error. Try again latter"))
         }
     }
+
+  private def responseErr(text: String) = Json.obj("message" -> text)
 
   private val rejectionHandler = RejectionHandler.newBuilder()
     .handle {
