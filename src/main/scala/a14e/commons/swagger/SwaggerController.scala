@@ -67,7 +67,7 @@ class SwaggerController(val configs: Config,
     }
   }
 
-  private lazy val swaggerUri = s"http://locahost:${mainConfigs.port}/swagger"
+  private lazy val swaggerUri = s"http://localhost:${mainConfigs.port}/swagger"
 
   private lazy val enabled = configs.as[Option[Boolean]]("swagger.enabled").getOrElse(false)
 
