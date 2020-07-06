@@ -31,9 +31,9 @@ class SwaggerController(val configs: Config,
   import akka.stream.Materializer
   import a14e.commons.controller.Controller
 
-  def init(): Unit = {
+  def init(name: String = ""): Unit = {
     if (enabled)
-      logger.info(s"see swagger on $swaggerUri")
+      logger.info(s"See $name swagger on $swaggerUri")
   }
 
   override lazy val route: Route =
@@ -67,7 +67,7 @@ class SwaggerController(val configs: Config,
     }
   }
 
-  private lazy val swaggerUri = s"http://${mainConfigs.host}:${mainConfigs.port}/swagger"
+  private lazy val swaggerUri = s"http://locahost:${mainConfigs.port}/swagger"
 
   private lazy val enabled = configs.as[Option[Boolean]]("swagger.enabled").getOrElse(false)
 
