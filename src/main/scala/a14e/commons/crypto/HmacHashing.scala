@@ -1,19 +1,18 @@
 package a14e.commons.crypto
 
 import a14e.commons.crypto.HmacAlgorithms.HmacAlgorithm
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 object HmacHashing {
 
-  import javax.crypto.Mac
-  import javax.crypto.spec.SecretKeySpec
-
-  def hashBytes(message: Array[Byte],
-                secret: Array[Byte],
-                algorithm: HmacAlgorithm): Array[Byte] = {
-    val secretKey = new SecretKeySpec(secret, algorithm.toString)
+  def hash(message: String,
+           secret: String,
+           algorithm: HmacAlgorithm): Array[Byte] = {
+    val secretKey = new SecretKeySpec(secret.getBytes, algorithm.toString)
     val mac = Mac.getInstance(algorithm.toString)
     mac.init(secretKey)
-    val result: Array[Byte] = mac.doFinal(message)
+    val result: Array[Byte] = mac.doFinal(message.getBytes)
     result
   }
 
