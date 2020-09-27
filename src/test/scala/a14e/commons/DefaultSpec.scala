@@ -1,7 +1,5 @@
 package a14e.commons
 
-import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.time.{Millis, Seconds, Span}
@@ -16,15 +14,6 @@ trait DefaultSpec
     with MockitoSugar {
   self =>
 
-  trait ConcurrentWirings {
-    implicit def actorSystem: ActorSystem = self.actorSystem
-    implicit def excecutionContext: ExecutionContext = self.excecutionContext
-    implicit def materializer: Materializer = self.materializer
-  }
-
   protected implicit val overridenPatienceConfig = PatienceConfig(Span(1, Seconds), Span(15, Millis))
 
-  private implicit lazy val actorSystem = ActorSystem()
-  private implicit lazy val excecutionContext = actorSystem.dispatcher
-  private implicit lazy val materializer = ActorMaterializer()
 }

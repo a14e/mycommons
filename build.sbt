@@ -6,7 +6,7 @@ version := "0.3.12"
 
 organization := "com.github.a14e"
 
-scalaVersion := "2.13.2"
+scalaVersion := "2.13.3"
 
 
 val akkaHttpVersion = "10.1.8"
@@ -16,18 +16,6 @@ val playJsonVersion = "2.7.4"
 
 libraryDependencies ++= Seq(
 
-  "com.typesafe.akka" %% "akka-http" % akkaHttpVersion, // для http
-  "com.typesafe.akka" %% "akka-stream" % akkaStreamsVersion,
-
-  "com.softwaremill.macwire" %% "macros" % "2.3.3" % "provided",
-  "com.softwaremill.macwire" %% "macrosakka" % "2.3.3" % "provided",
-  "com.softwaremill.macwire" %% "util" % "2.3.3",
-  "com.softwaremill.macwire" %% "proxy" % "2.3.3",
-
-
-  "com.typesafe.play" %% "play-json" % "2.7.4",
-
-
   "com.google.guava" % "guava" % "27.0.1-jre", // для полезных утилит (пока только кэш)
   "com.github.ben-manes.caffeine" % "caffeine" % "2.8.0",
 
@@ -35,23 +23,8 @@ libraryDependencies ++= Seq(
   "com.google.code.findbugs" % "jsr305" % "3.0.1",
 
 
-  // для конфигов
-  "com.iheart" %% "ficus" % "1.4.7",
-
-  // для крутых фьюч
-  "org.scala-lang.modules" %% "scala-async" % "0.10.0",
-
-
   "ch.qos.logback" % "logback-classic" % "1.2.3", // для логов
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2", //упрощенные логи
-
-
-  // для сваггера
-  "com.github.swagger-akka-http" %% "swagger-akka-http" % "1.1.0",
-  "org.webjars" % "swagger-ui" % "3.0.10",
-  "org.webjars" % "webjars-locator" % "0.32",
-
-  "de.heikoseeberger" %% "akka-http-play-json" % "1.27.0",
 
 
   "org.scalatest" %% "scalatest" % "3.0.8" % "test", // для тестов
@@ -59,12 +32,26 @@ libraryDependencies ++= Seq(
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % "test",
 
-  "org.reflections" % "reflections" % "0.9.10",
+  "org.reflections" % "reflections" % "0.9.10"
 
-  "org.mindrot" % "jbcrypt" % "0.4"
+
+
 )
 
 
+libraryDependencies += "org.typelevel" %% "cats-effect" % "2.2.0"
+libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.0"
+libraryDependencies += "co.fs2" %% "fs2-reactive-streams" % "2.4.0"
+libraryDependencies += "org.camunda.bpm" % "camunda-external-task-client" % "1.3.1"
+libraryDependencies += "com.sun.xml.bind" % "jaxb-impl" % "2.3.3"
+libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3"
+
+val circeVersion = "0.12.3"
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
 
 javacOptions in(Compile, compile) ++= {
   val javaVersion = "1.8"

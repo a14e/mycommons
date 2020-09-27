@@ -2,8 +2,6 @@ package a14e.commons.enum
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.typesafe.config.ConfigException.Generic
-
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success, Try}
 

@@ -6,7 +6,6 @@ import java.util.UUID
 import a14e.commons.encodings.NumberEnum.NumberEnum
 import a14e.commons.encodings.Seconds.{Seconds, TO}
 import a14e.commons.enum.EnumFinder
-import akka.util.ByteString
 import com.google.common.io.BaseEncoding
 
 import scala.concurrent.duration.Duration

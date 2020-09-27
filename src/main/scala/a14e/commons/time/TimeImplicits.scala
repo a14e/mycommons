@@ -1,35 +1,25 @@
 package a14e.commons.time
 
-import java.time.Instant
+import java.time.{Duration, Instant}
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{DurationLong, FiniteDuration}
+import scala.language.implicitConversions
 
-object TimeImplicits {
+trait TimeImplicits
+  extends JavaDurationImplicits
+    with JavaToScalaDurationConverters
+    with JavaInstantImplicits
 
+object TimeImplicits extends TimeImplicits {
 
-  implicit class RichTime(val time: Instant) extends AnyVal {
-
-    def isExpired: Boolean = time.isBefore(Instant.now)
-
-    def isBetween(lower: Instant,
-                  upper: Instant,
-                  lowerClosed: Boolean = false,
-                  upperClosed: Boolean = true): Boolean = {
-
-      val toTestTimeMillis = time.toEpochMilli
-      val lowerMillis = lower.toEpochMilli
-      val upperMillis = upper.toEpochMilli
+  /** TODO имплиситы чтобы делать 2 * 2.seconds */
+}
 
 
-      (lowerMillis < toTestTimeMillis || (lowerClosed && lowerMillis == toTestTimeMillis)) &&
-      (upperMillis > toTestTimeMillis || (upperClosed && upperMillis == toTestTimeMillis))
+trait JavaToScalaDurationConverters {
 
-    }
-
-
-    def plus(duration: FiniteDuration): Instant = time.plusMillis(duration.toMillis)
-
-    def minus(duration: FiniteDuration): Instant = time.minusMillis(duration.toMillis)
-
+  implicit def javaDurationToConcurrentDuration(d: Duration): FiniteDuration = {
+    new DurationLong(d.toNanos).nanos
   }
+
 }
