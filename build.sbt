@@ -16,11 +16,11 @@ val playJsonVersion = "2.7.4"
 
 libraryDependencies ++= Seq(
 
-  "com.google.guava" % "guava" % "27.0.1-jre", // для полезных утилит (пока только кэш)
-  "com.github.ben-manes.caffeine" % "caffeine" % "2.8.0",
+  "com.google.guava" % "guava" % "29.0-jre", // для полезных утилит (пока только кэш)
+  "com.github.ben-manes.caffeine" % "caffeine" % "2.8.5",
 
   /** чтобы гуава не жаловалась */
-  "com.google.code.findbugs" % "jsr305" % "3.0.1",
+  "com.google.code.findbugs" % "jsr305" % "3.0.2",
 
 
   "ch.qos.logback" % "logback-classic" % "1.2.3", // для логов
@@ -34,19 +34,17 @@ libraryDependencies ++= Seq(
 
   "org.reflections" % "reflections" % "0.9.10"
 
-
-
 )
 
 
 libraryDependencies += "org.typelevel" %% "cats-effect" % "2.2.0"
-libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.0"
-libraryDependencies += "co.fs2" %% "fs2-reactive-streams" % "2.4.0"
+libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.4"
+libraryDependencies += "co.fs2" %% "fs2-reactive-streams" % "2.4.4"
 libraryDependencies += "org.camunda.bpm" % "camunda-external-task-client" % "1.3.1"
 libraryDependencies += "com.sun.xml.bind" % "jaxb-impl" % "2.3.3"
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3"
 
-val circeVersion = "0.12.3"
+val circeVersion = "0.13.0"
 libraryDependencies ++= Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-generic",
