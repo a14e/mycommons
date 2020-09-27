@@ -2,7 +2,7 @@ package a14e.commons.camundadsl
 
 import a14e.commons.camundadsl.TopicRoute.TopicBuilder
 import a14e.commons.camundadsl.Types.CamundaContext
-import a14e.robobpm.utils.traverse.TraverseImplicits._
+import a14e.commons.traverse.TraverseImplicits._
 import cats.Traverse
 import cats.effect.{ConcurrentEffect, ContextShift, Effect, Sync, Timer}
 import com.typesafe.scalalogging.LazyLogging

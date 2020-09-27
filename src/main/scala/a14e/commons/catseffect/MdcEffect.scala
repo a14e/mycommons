@@ -1,4 +1,4 @@
-package a14e.robobpm.utils.catseffect
+package a14e.commons.catseffect
 
 
 import cats.effect._

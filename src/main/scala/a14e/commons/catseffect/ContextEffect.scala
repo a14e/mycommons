@@ -1,4 +1,4 @@
-package a14e.robobpm.utils.catseffect
+package a14e.commons.catseffect
 
 import cats.effect.{IO, Sync}
 import org.apache.commons.codec.binary.Hex

@@ -1,7 +1,7 @@
 package a14e.commons.camundadsl
 
 import a14e.commons.camundadsl.Types.CamundaContext
-import a14e.robobpm.utils.catseffect.ContextEffect
+import a14e.commons.catseffect.ContextEffect
 import cats.effect.{ContextShift, Effect, IO, Sync}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
