@@ -2,6 +2,7 @@ package a14e.commons.mdc
 
 import cats.effect.Sync
 import org.slf4j.MDC
+import cats.syntax.all._
 
 object MdcEffect {
   type MdcMap = java.util.Map[String, String]
