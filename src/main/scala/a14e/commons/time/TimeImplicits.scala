@@ -9,6 +9,7 @@ trait TimeImplicits
   extends JavaDurationImplicits
     with JavaToScalaDurationConverters
     with JavaInstantImplicits
+    with JavaOffsetDateTImeImplicits
 
 object TimeImplicits extends TimeImplicits {
 

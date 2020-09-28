@@ -12,5 +12,5 @@ import scala.collection.mutable
 object TimeUtils {
 
   final val ScalaInf: scala.concurrent.duration.Duration = scala.concurrent.duration.Duration.Inf
-
+  final val Inf = Duration.ofMillis(Long.MaxValue)
 }

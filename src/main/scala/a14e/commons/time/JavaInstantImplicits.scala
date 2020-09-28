@@ -18,31 +18,11 @@ class RichTimeInstant(val time: Instant) extends AnyVal {
 
   def isExpired: Boolean = time.isBefore(Instant.now)
 
-  def isBetween(lower: Instant,
-                upper: Instant,
-                lowerClosed: Boolean = true,
-                upperClosed: Boolean = false): Boolean = {
-
-    val toTestTimeMillis = time.toEpochMilli
-    val lowerMillis = lower.toEpochMilli
-    val upperMillis = upper.toEpochMilli
-
-
-    (lowerMillis < toTestTimeMillis || (lowerClosed && lowerMillis == toTestTimeMillis)) &&
-    (upperMillis > toTestTimeMillis || (upperClosed && upperMillis == toTestTimeMillis))
-  }
-
-
-  def plus(duration: FiniteDuration): Instant = time.plusMillis(duration.toMillis)
-  def minus(duration: FiniteDuration): Instant = time.minusMillis(duration.toMillis)
-
-
-  def +(duration: FiniteDuration): Instant = time.plus(duration)
-  def -(duration: FiniteDuration): Instant = time.minus(duration)
+  def +(duration: FiniteDuration): Instant = time.plusMillis(duration.toMillis)
+  def -(duration: FiniteDuration): Instant = time.plusMillis(duration.toMillis)
 
   def +(duration: Duration): Instant = time.plus(duration)
   def -(duration: Duration): Instant = time.minus(duration)
-
 
   def -(instant: Instant): Duration = Duration.ofMillis(time.toEpochMilli - instant.toEpochMilli)
 
