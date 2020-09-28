@@ -1,11 +1,7 @@
-package a14e.commons.catseffect
+package a14e.commons.mdc
 
-
-import cats.effect._
-import cats.implicits._
+import cats.effect.Sync
 import org.slf4j.MDC
-
-import scala.language.higherKinds
 
 object MdcEffect {
   type MdcMap = java.util.Map[String, String]

@@ -11,7 +11,8 @@ import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
 class CamundaTaskService[F[_] : Sync](task: ExternalTask,
-                                      underlying: ExternalTaskService) extends LazyLogging {
+                                      underlying: ExternalTaskService,
+                                      blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyLogging {
 
 
   def complete()(implicit shift: ContextShift[F]): F[Unit] = {
@@ -111,10 +112,14 @@ class CamundaTaskService[F[_] : Sync](task: ExternalTask,
 
   private def blocked[T](f: => T)
                         (implicit shift: ContextShift[F]): F[T] = {
-    shift.evalOn(blockingCamundaPull)(Sync[F].delay(f))
+    shift.evalOn(this.blockingContext)(Sync[F].delay(f))
   }
 
+}
+
+
+object CamundaPull {
   // TODO конфиги и билдер
   private val CamundaHttpPool = 21
-  private val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(CamundaHttpPool))
+  val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(CamundaHttpPool))
 }

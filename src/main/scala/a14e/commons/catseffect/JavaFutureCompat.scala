@@ -2,6 +2,7 @@ package a14e.commons.catseffect
 
 import java.util.concurrent.{CancellationException, CompletableFuture, CompletionException}
 
+import a14e.commons.mdc.MdcEffect
 import cats.effect.{Async, ContextShift, Sync}
 import cats.implicits._
 

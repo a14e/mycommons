@@ -1,7 +1,8 @@
-package a14e.commons.catseffect
+package a14e.commons.mdc
 
 import cats.effect._
 import cats.implicits._
+
 import scala.concurrent.ExecutionContext
 
 class MdcContextShift[F[_]: Sync](context: ContextShift[F]) extends ContextShift[F] {
