@@ -57,7 +57,6 @@ object TopicRoute {
                                                               (handle: IN => F[OUT])
                                                               (implicit
                                                                coneffect: ConcurrentEffect[F],
-                                                               builder: TopicBuilder[F],
                                                                shift: ContextShift[F],
                                                                timer: Timer[F]): Unit = {
       implicit val builder: TopicBuilder[F] = this

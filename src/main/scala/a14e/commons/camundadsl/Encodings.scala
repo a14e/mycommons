@@ -1,6 +1,7 @@
 package a14e.commons.camundadsl
 
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 import java.util.{Date, UUID}
 
 import org.camunda.bpm.client.task.ExternalTask
@@ -11,6 +12,8 @@ import org.camunda.bpm.engine.variable.impl.value.PrimitiveTypeValueImpl._
 import org.camunda.bpm.engine.variable.value.TypedValue
 import shapeless.labelled.FieldType
 import shapeless.{::, HList, HNil, LabelledGeneric, Lazy, Witness, labelled}
+
+import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 
 trait RootEncoder[T] {
   def encode(x: T): VariableMap
@@ -150,8 +153,15 @@ object FieldEncoder extends LowPriorityEncoders {
   implicit lazy val boolEncoderCamund: FieldEncoder[Boolean] = forTyped(new BooleanValueImpl(_))
 
   implicit lazy val uuidEncoderCamud: FieldEncoder[UUID] = FieldEncoder[String].contramap(_.toString)
-  implicit lazy val instantEncoderCamud: FieldEncoder[Instant] =
+  implicit lazy val javaDurationEncoderCamud: FieldEncoder[java.time.Duration] = {
+    FieldEncoder[String].contramap(_.toString)
+  }
+  implicit lazy val scalaDurationEncoderCamud: FieldEncoder[FiniteDuration] = {
+    FieldEncoder[java.time.Duration].contramap(d => java.time.Duration.ofMillis(d.toMillis))
+  }
+  implicit lazy val instantEncoderCamud: FieldEncoder[Instant] = {
     FieldEncoder[Date].contramap(x => new Date(x.toEpochMilli))
+  }
 }
 
 trait LowPriorityEncoders {
@@ -220,6 +230,12 @@ object FieldDecoder extends LowPriorityDecoders {
 
 
   implicit lazy val uuidDecoderCamund: FieldDecoder[UUID] = FieldDecoder[String].map(UUID.fromString)
+  implicit lazy val javaDurationDecoderCamund: FieldDecoder[java.time.Duration] = {
+    FieldDecoder[String].map(java.time.Duration.parse)
+  }
+  implicit lazy val scalaDurationDecoderCamund: FieldDecoder[FiniteDuration] = {
+    FieldDecoder[java.time.Duration].map(d => FiniteDuration(d.toMillis, TimeUnit.MILLISECONDS))
+  }
   implicit lazy val instantDecoderCamund: FieldDecoder[Instant] = FieldDecoder[Date].map(_.toInstant)
 }
 
