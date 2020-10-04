@@ -39,13 +39,13 @@ object TopicRoute {
       this
     }
 
-    def strict[IN: RootDecoder, OUT: RootEncoder](topic: String,
-                                                  lockDuration: FiniteDuration = 20.seconds,
-                                                  errorStrategy: ErrorStrategy = ErrorStrategy.failAndStop)
-                                                 (handle: IN => F[OUT])
-                                                 (implicit
-                                                  switch: ContextShift[F],
-                                                  ef: Effect[F]): Unit = {
+    def route[IN: RootDecoder, OUT: RootEncoder](topic: String,
+                                                 lockDuration: FiniteDuration = 20.seconds,
+                                                 errorStrategy: ErrorStrategy = ErrorStrategy.failAndStop)
+                                                (handle: IN => F[OUT])
+                                                (implicit
+                                                 shift: ContextShift[F],
+                                                 ef: Effect[F]): Unit = {
       implicit val builder: TopicBuilder[F] = this
       Routes.route[F, IN, OUT](topic, lockDuration, errorStrategy)(handle)
     }

@@ -1,6 +1,6 @@
 package a14e.commons.time
 
-import java.time.{Duration, Instant}
+import java.time.{Duration, Instant, OffsetDateTime, ZoneOffset}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.implicitConversions
@@ -30,4 +30,6 @@ class RichTimeInstant(val time: Instant) extends AnyVal {
   def >=(other: Instant): Boolean = time.compareTo(other) >= 0
   def <(other: Instant): Boolean = time.compareTo(other) < 0
   def <=(other: Instant): Boolean = time.compareTo(other) <= 0
+
+  def toUtcOffset: OffsetDateTime = time.atOffset(ZoneOffset.UTC)
 }

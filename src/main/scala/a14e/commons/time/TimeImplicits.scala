@@ -10,6 +10,7 @@ trait TimeImplicits
     with JavaToScalaDurationConverters
     with JavaInstantImplicits
     with JavaOffsetDateTImeImplicits
+    with JavaLocalTimeImplicits
 
 object TimeImplicits extends TimeImplicits {
 

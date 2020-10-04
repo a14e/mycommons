@@ -4,6 +4,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.{Date, UUID}
 
+import a14e.commons.`enum`.{EnumFinder, FindableEnum}
 import org.camunda.bpm.client.task.ExternalTask
 import org.camunda.bpm.client.variable.impl.value.JsonValueImpl
 import org.camunda.bpm.engine.variable.VariableMap
@@ -125,6 +126,7 @@ trait AutoEncoders extends {
 
 trait FieldEncoder[T] {
   self =>
+
   def encode(name: String,
              x: T,
              map: VariableMap): VariableMap
@@ -162,12 +164,17 @@ object FieldEncoder extends LowPriorityEncoders {
   implicit lazy val instantEncoderCamud: FieldEncoder[Instant] = {
     FieldEncoder[Date].contramap(x => new Date(x.toEpochMilli))
   }
+  implicit def enumEncoderCamund[VALUE <: Enumeration#Value]: FieldEncoder[VALUE] = {
+    FieldEncoder[String].contramap(_.toString)
+  }
 }
+
+
 
 trait LowPriorityEncoders {
 
-  import io.circe.Encoder
 
+  import io.circe.Encoder
   implicit def jsonEncoder[T: Encoder]: FieldEncoder[T] = (name: String, x: T, map: VariableMap) => {
     val jsonString = Encoder[T].apply(x).noSpaces
     val jsonValue = new JsonValueImpl(jsonString)
@@ -237,6 +244,10 @@ object FieldDecoder extends LowPriorityDecoders {
     FieldDecoder[java.time.Duration].map(d => FiniteDuration(d.toMillis, TimeUnit.MILLISECONDS))
   }
   implicit lazy val instantDecoderCamund: FieldDecoder[Instant] = FieldDecoder[Date].map(_.toInstant)
+
+  implicit def finableEnumDecoderCamund[E <: Enumeration : EnumFinder]: FieldDecoder[E#Value] = {
+    FieldDecoder[String].map(EnumFinder[E].find.withName)
+  }
 }
 
 

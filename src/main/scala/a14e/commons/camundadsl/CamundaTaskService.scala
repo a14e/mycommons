@@ -119,7 +119,7 @@ class CamundaTaskService[F[_] : Sync](task: ExternalTask,
 
 
 object CamundaPull {
-  // TODO конфиги и билдер
-  private val CamundaHttpPool = 21
-  val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(CamundaHttpPool))
+  // тут ок cached, так как основной источник событий -- сама камунда и если упадет камунда, то у нас не будет
+  // источников для некотролируемого роста числа потоков
+  val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 }

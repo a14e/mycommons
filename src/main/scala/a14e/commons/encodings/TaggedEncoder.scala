@@ -72,7 +72,7 @@ object NumberEnum extends AsTag {
     new TaggedEncodings[ENUM#Value, Int, NumberEnum] {
       override def encode(x: ENUM#Value): Int = x.id
 
-      override def decode(id: Int): ENUM#Value = implicitly[EnumFinder[ENUM]].find(id)
+      override def decode(id: Int): ENUM#Value = EnumFinder[ENUM].find(id)
     }
 }
 

@@ -45,7 +45,8 @@ sealed trait ErrorStrategy
 object ErrorStrategy {
   // TODO нормальная экспоненциальная обработка ошибок
   val failAndStop: ErrorStrategy = Failure(0, 0.seconds)
-  val simpleRetries: ErrorStrategy = Failure(3, 10.seconds)
+  val shotRetries: ErrorStrategy = Failure(3, 10.seconds)
+  val simpleRetries: ErrorStrategy = Failure(10, 10.seconds)
   val bpmnError: ErrorStrategy = BpmnError
 
   def customRetries(retries: Int,

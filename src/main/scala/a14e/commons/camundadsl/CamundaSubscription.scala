@@ -25,9 +25,9 @@ trait CamundaSubscription[F[_]] {
 }
 
 class CamundaSubscriptionF[F[_] : ContextShift : Effect, IN: RootDecoder](processDefKey: String,
-                                                                                 topic: String,
-                                                                                 lockDuration: FiniteDuration)
-                                                                                (handler: CamundaContext[F, IN] => F[_])
+                                                                          topic: String,
+                                                                          lockDuration: FiniteDuration)
+                                                                         (handler: CamundaContext[F, IN] => F[_])
   extends LazyLogging
     with CamundaSubscription[F] {
 
@@ -43,7 +43,7 @@ class CamundaSubscriptionF[F[_] : ContextShift : Effect, IN: RootDecoder](proces
           case Right(_) =>
             IO.delay(logger.info(s"Handling of topic $topic completed with success"))
         }.toIO
-         .unsafeRunAsyncAndForget()
+          .unsafeRunAsyncAndForget()
       }.open()
   }
 
