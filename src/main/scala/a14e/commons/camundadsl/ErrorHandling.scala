@@ -1,9 +1,12 @@
 package a14e.commons.camundadsl
 
+import java.time.Duration
+
 import a14e.commons.camundadsl.Types.CamundaContext
+import a14e.commons.time.RichDuration
 import cats.effect.{ContextShift, Sync}
 import cats.syntax.flatMap._
-import scala.concurrent.duration._
+
 import scala.language.higherKinds
 
 
@@ -15,17 +18,17 @@ object ErrorHandling {
                                               strategy: ErrorStrategy): F[Unit] = {
     strategy match {
       case ErrorStrategy.BpmnError => bpmnErr(context, err)
-      case ErrorStrategy.Failure(retries, timeout) => failure(context, err, retries, timeout)
+      case f@ErrorStrategy.Failure(_, _) => failure(context, err, f)
     }
   }
 
   private def failure[F[_] : Sync : ContextShift](context: CamundaContext[F, _],
                                                   err: Throwable,
-                                                  retries: Int,
-                                                  timeout: FiniteDuration): F[Unit] = {
-    val retriesLeft = Option(context.task.getRetries).map(_.intValue()).getOrElse(retries)
+                                                  failStrategy: ErrorStrategy.Failure): F[Unit] = {
+    val retriesLeft = Option(context.task.getRetries).map(_.intValue()).getOrElse(failStrategy.retries)
+    val nextStep = failStrategy.retryStep.nextStep(failStrategy.retries - retriesLeft)
     context.service
-      .handleFailure(err.getMessage, err.getStackTrace.mkString("|"), retriesLeft, timeout.toMillis)
+      .handleFailure(err.getMessage, err.getStackTrace.mkString("|"), retriesLeft, nextStep.toMillis)
       .flatMap(_ => throw err)
   }
 
@@ -43,19 +46,45 @@ object ErrorHandling {
 sealed trait ErrorStrategy
 
 object ErrorStrategy {
-  // TODO нормальная экспоненциальная обработка ошибок
-  val failAndStop: ErrorStrategy = Failure(0, 0.seconds)
-  val shotRetries: ErrorStrategy = Failure(3, 10.seconds)
-  val simpleRetries: ErrorStrategy = Failure(10, 10.seconds)
-  val bpmnError: ErrorStrategy = BpmnError
 
-  def customRetries(retries: Int,
-                    retryTimeout: FiniteDuration): ErrorStrategy = Failure(retries, retryTimeout)
+  import a14e.commons.time.TimeImplicits._
+
+  // TODO нормальная экспоненциальная обработка ошибок
+  val failAndStop: ErrorStrategy = Failure(0, ConstStep(0.seconds))
+  val shotRetries: ErrorStrategy = Failure(3, ConstStep(10.seconds))
+  val simpleRetries: ErrorStrategy = Failure(10, ConstStep(10.seconds))
+  // консервативная стратегия с повторами через 1 секунду и экспоненциальным ростом
+  val simpleExpRetries: ErrorStrategy = Failure(10, ExpStep(1.seconds, 4, 20.minutes))
+  val bpmnError: ErrorStrategy = BpmnError
 
   case object BpmnError extends ErrorStrategy
 
-  case class Failure(retries: Int, retryTimeout: FiniteDuration) extends ErrorStrategy {
+  case class Failure(retries: Int, retryStep: RetryStep) extends ErrorStrategy {
     assert(retries >= 0)
+  }
+
+  trait RetryStep {
+    def nextStep(retry: Int): Duration
+  }
+
+  case class ConstStep(step: Duration) extends RetryStep {
+    assert(step.toMillis >= 0)
+
+    override def nextStep(retry: Int): Duration = step
+  }
+
+  case class ExpStep(init: Duration,
+                     ratio: Double,
+                     max: Duration) extends RetryStep {
+    assert(ratio >= 1.0)
+    assert(max.toMillis > 0)
+    assert(init.toMillis > 0)
+
+    override def nextStep(retry: Int): Duration = {
+      val multiplier: Long = math.pow(ratio, retry).toLong
+      if (multiplier < 0L) max
+      else multiplier * init
+    }
   }
 
 }

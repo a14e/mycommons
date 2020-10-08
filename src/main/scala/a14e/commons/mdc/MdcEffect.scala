@@ -4,6 +4,8 @@ import cats.effect.Sync
 import org.slf4j.MDC
 import cats.syntax.all._
 
+import scala.language.higherKinds
+
 object MdcEffect {
   type MdcMap = java.util.Map[String, String]
 
@@ -16,6 +18,13 @@ object MdcEffect {
 
   def putKey[F[_] : Sync](key: String, value: String): F[Unit] = {
     Sync[F].delay(MDC.put(key, value))
+  }
+
+  def getKey[F[_] : Sync](key: String): F[Option[String]] = {
+    Sync[F].delay {
+      val value = MDC.get(key)
+      Option(value)
+    }
   }
 
   def withMdc[F[_] : Sync, T](mdc: MdcMap)

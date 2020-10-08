@@ -50,6 +50,7 @@ class CamundaSubscriptionF[F[_] : ContextShift : Effect, IN: RootDecoder](proces
   private def buildHandlingF(task: ExternalTask,
                              service: ExternalTaskService): F[_] = Sync[F].defer {
     logger.info(s"Received task for topic $topic. businessKey = ${task.getBusinessKey}. ${task.getAllVariablesTyped}")
+    // TODO handling of decoding errors
     val wrapper = new CamundaTaskService[F](task, service)
     val decoded = RootDecoder[IN].decode(task)
     val context = CamundaContext(wrapper, task, decoded)

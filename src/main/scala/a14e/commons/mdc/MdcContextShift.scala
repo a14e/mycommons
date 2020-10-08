@@ -4,6 +4,8 @@ import cats.effect._
 import cats.implicits._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.FiniteDuration
+import scala.language.higherKinds
 
 class MdcContextShift[F[_]: Sync](context: ContextShift[F]) extends ContextShift[F] {
 
@@ -26,3 +28,4 @@ class MdcContextShift[F[_]: Sync](context: ContextShift[F]) extends ContextShift
   }
 
 }
+

@@ -3,6 +3,7 @@ package a14e.commons.mdc
 import cats.effect.Sync
 import org.apache.commons.codec.binary.Hex
 
+import scala.language.higherKinds
 import scala.util.Random
 
 object ContextEffect {

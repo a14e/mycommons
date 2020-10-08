@@ -12,10 +12,13 @@ trait JavaDurationImplicits {
   implicit def toDurationBuilderLong(long: Long): JavaDurationBuilders = new JavaDurationBuilders(long)
   implicit def toDurationBuilderInt(int: Int): JavaDurationBuilders = toDurationBuilderLong(int)
   implicit def toDurationBuilderShort(short: Short): JavaDurationBuilders = toDurationBuilderLong(short)
-  implicit def toRichDuration(d: Duration): RichDuration = new RichDuration(d)
+  implicit def durationToRichJavaDuration(d: Duration): RichDuration = new RichDuration(d)
+
 }
 
 class JavaDurationBuilders(val timeValue: Long) extends AnyVal {
+
+  def * (duration: Duration): Duration =  duration.multipliedBy(timeValue)
 
   def nanoseconds: Duration = Duration.ofNanos(timeValue)
   def nanos: Duration = nanoseconds
@@ -60,3 +63,4 @@ class RichDuration(val duration: Duration) extends AnyVal {
 
   def asScala: FiniteDuration = TimeImplicits.javaDurationToConcurrentDuration(duration)
 }
+
