@@ -10,8 +10,19 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.FiniteDuration
 import scala.language.higherKinds
 
-class CamundaTaskService[F[_] : Sync](task: ExternalTask,
-                                      underlying: ExternalTaskService,
+
+object CamundaTaskService {
+  def apply[F[_]: CamundaTaskService]: CamundaTaskService[F] = implicitly[CamundaTaskService[F]]
+}
+
+object CamundaPull {
+  // тут ок cached, так как основной источник событий -- сама камунда и если упадет камунда, то у нас не будет
+  // источников для некотролируемого роста числа потоков
+  val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
+}
+
+class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
+                                      val underlying: ExternalTaskService,
                                       blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyLogging {
 
 
@@ -117,9 +128,3 @@ class CamundaTaskService[F[_] : Sync](task: ExternalTask,
 
 }
 
-
-object CamundaPull {
-  // тут ок cached, так как основной источник событий -- сама камунда и если упадет камунда, то у нас не будет
-  // источников для некотролируемого роста числа потоков
-  val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
-}

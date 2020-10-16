@@ -15,6 +15,7 @@ import shapeless.labelled.FieldType
 import shapeless.{::, HList, HNil, LabelledGeneric, Lazy, Witness, labelled}
 
 import scala.concurrent.duration.{FiniteDuration, TimeUnit}
+import scala.util.{Failure, Success, Try}
 
 trait RootEncoder[T] {
   def encode(x: T): VariableMap
@@ -29,18 +30,19 @@ object RootEncoder {
 // todo валидация на null
 trait RootDecoder[T] {
   self =>
-  def decode(task: ExternalTask): T
+  // TODO возвращать Try[T]
+  def decode(task: ExternalTask): Try[T]
 }
 
 object RootDecoder {
-  implicit def indentityRootDecoder: RootDecoder[ExternalTask] = x => x
+  implicit def indentityRootDecoder: RootDecoder[ExternalTask] = x => Success(x)
 
-  implicit def unitRootDecoder: RootDecoder[Unit] = _ => ()
+  implicit def unitRootDecoder: RootDecoder[Unit] = _ => Success(())
 
   def apply[T: RootDecoder]: RootDecoder[T] = implicitly[RootDecoder[T]]
 
 
-  implicit def nilRootDecoder: RootDecoder[HNil] = _ => HNil
+  implicit def nilRootDecoder: RootDecoder[HNil] = _ => Success(HNil)
 
   // формат камунды не поддерживает рекурсию, поэтому тут отдельный тип
   implicit def hlistRootDecoder[Key <: Symbol, Head, Tail <: HList](implicit
@@ -51,9 +53,10 @@ object RootDecoder {
     val key: String = classFieldKey.value.name
     (task: ExternalTask) => {
 
-      val head = headDecoder.value.decode(key, task)
-      val tail = tailDecoder.value.decode(task)
-      labelled.field[Key][Head](head) :: tail
+      for {
+        head <- headDecoder.value.decode(key, task)
+        tail <- tailDecoder.value.decode(task)
+      } yield labelled.field[Key][Head](head) :: tail
     }
   }
 }
@@ -93,7 +96,7 @@ trait AutoDecoders extends {
   implicit def caseClassDecoder[T <: Product with Serializable, Repr](implicit
                                                                       lgen: LabelledGeneric.Aux[T, Repr],
                                                                       reprWrites: Lazy[RootDecoder[Repr]]): RootDecoder[T] =
-    (task: ExternalTask) => lgen.from(reprWrites.value.decode(task))
+    (task: ExternalTask) => reprWrites.value.decode(task).map(lgen.from)
 
 }
 
@@ -195,25 +198,25 @@ trait FieldDecoder[T] {
   self =>
 
   def map[B](f: T => B): FieldDecoder[B] =
-    (name: String, task: ExternalTask) => f(self.decode(name, task))
+    (name: String, task: ExternalTask) => self.docodeImpl(name, task).map(f)
 
 
   def decode(name: String,
-             task: ExternalTask): T = {
+             task: ExternalTask): Try[T] = {
     val res = docodeImpl(name, task)
     if (res == null && !nullEnabled)
-      throw new RuntimeException("null value is not supported here")
-    res
+      Failure(new RuntimeException("null value is not supported here"))
+    else res
   }
 
   protected def docodeImpl(name: String,
-                           task: ExternalTask): T
+                           task: ExternalTask): Try[T]
 
   protected def nullEnabled = false
 
   def enableNull: FieldDecoder[T] = new FieldDecoder[T] {
     override def docodeImpl(name: String,
-                            task: ExternalTask): T = self.docodeImpl(name, task)
+                            task: ExternalTask): Try[T] = self.docodeImpl(name, task)
 
     protected override def nullEnabled = true
   }
@@ -257,11 +260,10 @@ trait LowPriorityDecoders {
 
   implicit def jsonDecoder[T: Decoder]: FieldDecoder[T] = { (name: String, task: ExternalTask) =>
     val jsonString = task.getVariable[String](name)
-    val resultEither = for {
+    (for {
       json <- parser.parse(jsonString)
       result <- json.as[T]
-    } yield result
-    resultEither.toTry.get
+    } yield result).toTry
   }
 
   implicit def optionDecoder[T: FieldDecoder]: FieldDecoder[Option[T]] = FieldDecoder[T].map(Option(_)).enableNull
