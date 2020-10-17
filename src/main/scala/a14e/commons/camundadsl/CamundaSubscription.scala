@@ -17,6 +17,7 @@ object Types {
 
   case class CamundaContext[F[_], IN](service: CamundaTaskService[F],
                                       task: ExternalTask,
+                                      businessKey: String,
                                       value: IN)
 
 
@@ -56,15 +57,14 @@ class CamundaSubscriptionF[
   private def buildHandlingF(task: ExternalTask,
                              javaService: ExternalTaskService): F[_] = Sync[F].defer {
     logger.info(s"Received task for topic $topic. businessKey = ${task.getBusinessKey}. ${task.getAllVariablesTyped}")
-    // TODO handling of decoding errors
     implicit val wrapperService: CamundaTaskService[F] = new CamundaTaskService[F](task, javaService)
     val decodedF: F[IN] = Sync[F].fromTry(RootDecoder[IN].decode(task))
       .handleErrorWith(err => ErrorHandling.handleError(err, ErrorStrategy.shotRetries))
 
     (for {
       decoded <- decodedF
-      context = CamundaContext(wrapperService, task, decoded)
-      result <-  handler(context).value
+      context = CamundaContext(wrapperService, task, task.getBusinessKey, decoded)
+      result <- handler(context).value
       _ <- result match {
         case Left(BpmnError(err)) => ErrorHandling.handleBpmnErr(err)
         case Right(out) => wrapperService.complete(out)

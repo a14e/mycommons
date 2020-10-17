@@ -7,16 +7,15 @@ import scala.language.implicitConversions
 
 trait TimeImplicits
   extends JavaDurationImplicits
-    with JavaToScalaDurationConverters
     with JavaInstantImplicits
     with JavaOffsetDateTImeImplicits
     with JavaLocalTimeImplicits
+    with JavaToScalaDurationConverters
 
 object TimeImplicits extends TimeImplicits {
 
   /** TODO имплиситы чтобы делать 2 * 2.seconds */
 }
-
 
 trait JavaToScalaDurationConverters {
 

@@ -18,7 +18,7 @@ trait JavaDurationImplicits {
 
 class JavaDurationBuilders(val timeValue: Long) extends AnyVal {
 
-  def * (duration: Duration): Duration =  duration.multipliedBy(timeValue)
+  def *(duration: Duration): Duration =  duration.multipliedBy(timeValue)
 
   def nanoseconds: Duration = Duration.ofNanos(timeValue)
   def nanos: Duration = nanoseconds
