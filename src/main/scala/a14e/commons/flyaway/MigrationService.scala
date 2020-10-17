@@ -1,0 +1,74 @@
+package a14e.commons.flyaway
+
+import cats.effect.{ContextShift, IO, Resource, Sync}
+import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
+import org.flywaydb.core.Flyway
+import org.flywaydb.core.internal.util.jdbc.DriverDataSource
+import cats.implicits._
+
+import scala.concurrent.ExecutionContext
+
+trait MigrationService[F[_]] {
+  def migrate(): F[Unit]
+
+  def migrateIfConfigured(): F[Boolean]
+
+  def migrateByArguments(args: Array[String]): F[Boolean]
+}
+
+
+class MigrationServiceImpl[F[_] : Sync](migrationConfigs: MigrationsConfigs, blockingContext: ExecutionContext)
+                                       (implicit shift: ContextShift[F])
+  extends MigrationService[F]
+    with LazyLogging {
+  override def migrate(): F[Unit] = shift.evalOn(blockingContext)(Sync[F].suspend {
+    logger.info("Starting migrations")
+    generateFlyaway().map(_.migrate())
+  })
+
+  override def migrateIfConfigured(): F[Boolean] = {
+    val migrated = migrationConfigs.migrationOnStart
+    if (migrationConfigs.migrationOnStart) migrate().as(migrated)
+    else Sync[F].pure(migrated)
+  }
+
+
+  override def migrateByArguments(args: Array[String]): F[Boolean] = {
+    val shouldMigrate = Option(System.getProperty(MigrationKeyword)).map(_.trim.toLowerCase).contains("true")
+    if (shouldMigrate) migrate().as(shouldMigrate)
+    else Sync[F].pure(shouldMigrate)
+  }
+
+  private def generateFlyaway(): F[Flyway] = Sync[F].delay {
+    val flyaway = new Flyway()
+    val classLoader = Thread.currentThread.getContextClassLoader
+    val correctedUrl = {
+      migrationConfigs.dbName.fold(migrationConfigs.url) { dbName =>
+        removeTrailingSlash(migrationConfigs.url) + "/" + dbName
+      }
+    }
+    val datasource = {
+      new DriverDataSource(
+        classLoader,
+        migrationConfigs.driver,
+        correctedUrl,
+        migrationConfigs.login,
+        migrationConfigs.password,
+        null
+      )
+    }
+    flyaway.setDataSource(datasource)
+    flyaway.setBaselineOnMigrate(true)
+    flyaway.setLocations(migrationConfigs.directories: _ *)
+    flyaway
+  }
+
+  private def removeTrailingSlash(string: String): String = {
+    if (string.endsWith("/")) string.dropRight(1)
+    else string
+  }
+
+  private val MigrationKeyword = "migrate"
+
+}

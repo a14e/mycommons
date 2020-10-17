@@ -36,13 +36,6 @@ trait AS[FROM, TAG <: AsTag] {
   def value: FROM
 }
 
-object AsImplicits {
-
-  implicit class RichTaggedEncodings[T](val x: T) extends AnyVal {
-    def as[B <: AsTag]()(implicit encoder: TaggedEncoder[T, B#TO, B]): B#TO = encoder.encode(x)
-  }
-
-}
 
 
 object AS {

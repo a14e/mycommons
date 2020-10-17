@@ -32,8 +32,13 @@ libraryDependencies ++= Seq(
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
   "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % "test",
 
-  "org.reflections" % "reflections" % "0.9.10"
+  "org.reflections" % "reflections" % "0.9.10",
 
+  "org.flywaydb" % "flyway-core" % "4.2.0",
+
+
+  // для конфигов
+  "com.iheart" %% "ficus" % "1.4.7",
 )
 
 
