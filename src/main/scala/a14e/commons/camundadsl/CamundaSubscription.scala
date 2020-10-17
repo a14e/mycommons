@@ -59,7 +59,7 @@ class CamundaSubscriptionF[
     logger.info(s"Received task for topic $topic. businessKey = ${task.getBusinessKey}. ${task.getAllVariablesTyped}")
     implicit val wrapperService: CamundaTaskService[F] = new CamundaTaskService[F](task, javaService)
     val decodedF: F[IN] = Sync[F].fromTry(RootDecoder[IN].decode(task))
-      .handleErrorWith(err => ErrorHandling.handleError(err, ErrorStrategy.shotRetries))
+      .handleErrorWith(err => ErrorHandling.handleError(err, ErrorStrategy.failAndStop))
 
     (for {
       decoded <- decodedF
