@@ -38,9 +38,8 @@ libraryDependencies ++= Seq(
 
 
   // для конфигов
-  "com.iheart" %% "ficus" % "1.4.7",
+  "com.github.pureconfig" %% "pureconfig" % "0.13.0",
 )
-
 
 libraryDependencies += "org.typelevel" %% "cats-effect" % "2.2.0"
 libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.4"

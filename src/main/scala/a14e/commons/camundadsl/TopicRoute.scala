@@ -4,7 +4,6 @@ import a14e.commons.camundadsl.TopicRoute.TopicBuilder
 import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.traverse.TraverseImplicits._
 import cats.Traverse
-import cats.data.EitherT
 import cats.effect.{ConcurrentEffect, ContextShift, Effect, Sync, Timer}
 import com.typesafe.scalalogging.LazyLogging
 import org.camunda.bpm.client.ExternalTaskClient
@@ -89,7 +88,7 @@ object Routes extends LazyLogging {
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
                       bpmnErrors: Boolean = false)
                      (handle: IN => F[OUT]): Unit = {
-    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy)(ctx => handle(ctx.value))
+    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors)(ctx => handle(ctx.value))
   }
 
   def routeEither[
@@ -98,7 +97,7 @@ object Routes extends LazyLogging {
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries)
-                     (handle: IN => EitherT[F, BpmnError, OUT]): Unit = {
+                     (handle: IN => F[Either[BpmnError, OUT]]): Unit = {
     routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy)(ctx => handle(ctx.value))
   }
 
@@ -108,7 +107,7 @@ object Routes extends LazyLogging {
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries)
-                     (handle: CamundaContext[F, IN] => EitherT[F, BpmnError, OUT]): Unit = {
+                     (handle: CamundaContext[F, IN] => F[Either[BpmnError, OUT]]): Unit = {
 
 
     val subscription = new CamundaSubscriptionF[F, IN, OUT](
@@ -130,13 +129,12 @@ object Routes extends LazyLogging {
                      (handle: CamundaContext[F, IN] => F[OUT]): Unit = {
     routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy) {
       ctx =>
-        val res = handle(ctx)
+        handle(ctx)
           .map(Either.right[BpmnError, OUT](_))
           .handleErrorWith(err =>
             if (bpmnErrors) Sync[F].delay(Left(BpmnError(err)))
             else Sync[F].raiseError(err)
           )
-        EitherT(res)
     }
   }
 

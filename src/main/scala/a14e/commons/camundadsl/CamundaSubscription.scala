@@ -34,7 +34,7 @@ class CamundaSubscriptionF[
                     topic: String,
                     lockDuration: FiniteDuration,
                     errorStrategy: ErrorStrategy)
-                   (handler: CamundaContext[F, IN] => EitherT[F, BpmnError, OUT])
+                   (handler: CamundaContext[F, IN] => F[Either[BpmnError, OUT]])
   extends LazyLogging
     with CamundaSubscription[F] {
 
@@ -64,7 +64,7 @@ class CamundaSubscriptionF[
     (for {
       decoded <- decodedF
       context = CamundaContext(wrapperService, task, task.getBusinessKey, decoded)
-      result <- handler(context).value
+      result <- handler(context)
       _ <- result match {
         case Left(BpmnError(err)) => ErrorHandling.handleBpmnErr(err)
         case Right(out) => wrapperService.complete(out)

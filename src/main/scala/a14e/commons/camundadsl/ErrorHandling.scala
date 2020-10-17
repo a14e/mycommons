@@ -53,7 +53,7 @@ object ErrorStrategy {
   val shotRetries: ErrorStrategy = ErrorStrategy(3, ConstStep(10.seconds))
   val simpleRetries: ErrorStrategy = ErrorStrategy(10, ConstStep(10.seconds))
   // консервативная стратегия с повторами через 1 секунду и экспоненциальным ростом
-  val simpleExpRetries: ErrorStrategy = ErrorStrategy(10, ExpStep(1.seconds, 4, 30.minutes))
+  val simpleExpRetries: ErrorStrategy = ErrorStrategy(10, ExpStep(1.seconds, 2, 30.minutes))
 
   trait RetryStep {
     def nextStep(retry: Int): Duration
