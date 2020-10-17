@@ -1,6 +1,6 @@
 package a14e.commons.camundadsl
 
-import java.time.Instant
+import java.time.{Instant, OffsetDateTime, ZoneId}
 import java.util.concurrent.TimeUnit
 import java.util.{Date, UUID}
 
@@ -24,13 +24,37 @@ trait RootEncoder[T] {
 object RootEncoder {
   def apply[T: RootEncoder]: RootEncoder[T] = implicitly[RootEncoder[T]]
 
+  // спрятано, так как небезопасно
+  object either {
+    implicit def eitherRootEncoder[A: RootEncoder, B: RootEncoder]: RootEncoder[Either[A, B]] = {
+      case Left(a) => RootEncoder[A].encode(a)
+      case Right(b) => RootEncoder[B].encode(b)
+    }
+  }
+
+
   implicit def unitRootEncoder: RootEncoder[Unit] = _ => new VariableMapImpl()
+
+
+  import shapeless.Witness
+  import shapeless.labelled._
+  implicit def nilRootEncoder: RootEncoder[HNil] = _ => new VariableMapImpl()
+  // формат камунды не поддерживает рекурсию
+  implicit def hlistRootEncoder[Key <: Symbol, Head, Tail <: HList](implicit
+                                                                    classFieldKey: Witness.Aux[Key],
+                                                                    headEncoder: Lazy[FieldEncoder[Head]],
+                                                                    tailEncoder: Lazy[RootEncoder[Tail]]): RootEncoder[FieldType[Key, Head] :: Tail] = {
+
+    val key: String = classFieldKey.value.name
+    hlist =>
+      val tailMap = tailEncoder.value.encode(hlist.tail)
+      headEncoder.value.encode(key, hlist.head, tailMap)
+  }
 }
 
-// todo валидация на null
 trait RootDecoder[T] {
   self =>
-  // TODO возвращать Try[T]
+
   def decode(task: ExternalTask): Try[T]
 
   def map[B](f: T => B): RootDecoder[B] = task => self.decode(task).map(f)
@@ -48,6 +72,7 @@ object RootDecoder {
   def pure[T](x: T): RootDecoder[T] = _ => Success(x)
 
 
+  // спрятано, так как небезопасно
   object tuples {
     implicit def tuple2RootDecoder[A: RootDecoder, B: RootDecoder]: RootDecoder[(A, B)] = {
       for {
@@ -95,9 +120,7 @@ object RootDecoder {
 
 object Encodings {
 
-  object auto extends AutoDecoders with AutoEncoders {
-
-  }
+  object auto extends AutoDecoders with AutoEncoders
 
   object semiauto {
     def derivedDecoder[T <: Product with Serializable] = new DummyApplyDecoderWrapper[T]
@@ -115,6 +138,7 @@ object Encodings {
                         lgen: LabelledGeneric.Aux[T, Repr],
                         reprWrites: Lazy[RootEncoder[Repr]]): RootEncoder[T] = auto.caseClassEncoder[T, Repr]
     }
+
   }
 
 
@@ -134,22 +158,6 @@ trait AutoDecoders extends {
 
 trait AutoEncoders extends {
 
-  import shapeless.{LabelledGeneric, Witness, _}
-  import shapeless.labelled._
-
-  implicit def nilRootEncoder: RootEncoder[HNil] = _ => new VariableMapImpl()
-
-  // формат камунды не поддерживает рекурсию
-  implicit def hlistRootEncoder[Key <: Symbol, Head, Tail <: HList](implicit
-                                                                    classFieldKey: Witness.Aux[Key],
-                                                                    headEncoder: Lazy[FieldEncoder[Head]],
-                                                                    tailEncoder: Lazy[RootEncoder[Tail]]): RootEncoder[FieldType[Key, Head] :: Tail] = {
-
-    val key: String = classFieldKey.value.name
-    hlist =>
-      val tailMap = tailEncoder.value.encode(hlist.tail)
-      headEncoder.value.encode(key, hlist.head, tailMap)
-  }
 
   implicit def caseClassEncoder[T <: Product with Serializable, Repr](implicit
                                                                       lgen: LabelledGeneric.Aux[T, Repr],
@@ -199,17 +207,21 @@ object FieldEncoder extends LowPriorityEncoders {
   implicit lazy val instantEncoderCamud: FieldEncoder[Instant] = {
     FieldEncoder[Date].contramap(x => new Date(x.toEpochMilli))
   }
+  implicit lazy val offsetDateTimeEncoderCamud: FieldEncoder[OffsetDateTime] = {
+    FieldEncoder[Instant].contramap(_.toInstant)
+  }
+
   implicit def enumEncoderCamund[VALUE <: Enumeration#Value]: FieldEncoder[VALUE] = {
     FieldEncoder[String].contramap(_.toString)
   }
 }
 
 
-
 trait LowPriorityEncoders {
 
 
   import io.circe.Encoder
+
   implicit def jsonEncoder[T: Encoder]: FieldEncoder[T] = (name: String, x: T, map: VariableMap) => {
     val jsonString = Encoder[T].apply(x).noSpaces
     val jsonValue = new JsonValueImpl(jsonString)
@@ -279,6 +291,9 @@ object FieldDecoder extends LowPriorityDecoders {
     FieldDecoder[java.time.Duration].map(d => FiniteDuration(d.toMillis, TimeUnit.MILLISECONDS))
   }
   implicit lazy val instantDecoderCamund: FieldDecoder[Instant] = FieldDecoder[Date].map(_.toInstant)
+  implicit lazy val offsetDateTimeDecoderCamund: FieldDecoder[OffsetDateTime] = {
+    FieldDecoder[Instant].map(instant => OffsetDateTime.ofInstant(instant, ZoneId.systemDefault()))
+  }
 
   implicit def finableEnumDecoderCamund[E <: Enumeration : EnumFinder]: FieldDecoder[E#Value] = {
     FieldDecoder[String].map(EnumFinder[E].find.withName)
