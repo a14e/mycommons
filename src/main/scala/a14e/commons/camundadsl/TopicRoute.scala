@@ -39,32 +39,6 @@ object TopicRoute {
       this
     }
 
-    def route[IN: RootDecoder, OUT: RootEncoder](topic: String,
-                                                 lockDuration: FiniteDuration = 20.seconds,
-                                                 errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
-                                                 bpmnErrors: Boolean = false)
-                                                (handle: IN => F[OUT])
-                                                (implicit
-                                                 shift: ContextShift[F],
-                                                 ef: Effect[F]): Unit = {
-      implicit val builder: TopicBuilder[F] = this
-      Routes.route[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors)(handle)
-    }
-
-    def routeWithLockUpdate[IN: RootDecoder, OUT: RootEncoder](topic: String,
-                                                               lockDuration: FiniteDuration = 20.seconds,
-                                                               timeStep: FiniteDuration = 15.seconds,
-                                                               errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
-                                                               bpmnErrors: Boolean = false)
-                                                              (handle: IN => F[OUT])
-                                                              (implicit
-                                                               coneffect: ConcurrentEffect[F],
-                                                               shift: ContextShift[F],
-                                                               timer: Timer[F]): Unit = {
-      implicit val builder: TopicBuilder[F] = this
-      Routes.routeWithLockUpdate[F, IN, OUT](topic, lockDuration, timeStep, errorStrategy, bpmnErrors)(handle)
-    }
-
     def build: TopicRoute[F] = new TopicRoute[F](buffer.result())
 
     private val buffer = new ListBuffer[CamundaSubscription[F]]

@@ -141,7 +141,6 @@ object Encodings {
 
   }
 
-
 }
 
 trait AutoDecoders extends {
