@@ -14,7 +14,7 @@ import org.camunda.bpm.engine.variable.value.TypedValue
 import shapeless.labelled.FieldType
 import shapeless.{::, HList, HNil, LabelledGeneric, Lazy, Witness, labelled}
 
-import scala.concurrent.duration.{FiniteDuration, TimeUnit}
+import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
 trait RootEncoder[T] {
@@ -32,17 +32,49 @@ trait RootDecoder[T] {
   self =>
   // TODO возвращать Try[T]
   def decode(task: ExternalTask): Try[T]
+
+  def map[B](f: T => B): RootDecoder[B] = task => self.decode(task).map(f)
+
+  def flatMap[B](f: T => RootDecoder[B]): RootDecoder[B] = task => self.decode(task).flatMap(x => f(x).decode(task))
 }
 
 object RootDecoder {
   implicit def indentityRootDecoder: RootDecoder[ExternalTask] = x => Success(x)
 
-  implicit def unitRootDecoder: RootDecoder[Unit] = _ => Success(())
+  implicit def unitRootDecoder: RootDecoder[Unit] = RootDecoder.pure(())
 
   def apply[T: RootDecoder]: RootDecoder[T] = implicitly[RootDecoder[T]]
 
+  def pure[T](x: T): RootDecoder[T] = _ => Success(x)
 
-  implicit def nilRootDecoder: RootDecoder[HNil] = _ => Success(HNil)
+
+  object tuples {
+    implicit def tuple2RootDecoder[A: RootDecoder, B: RootDecoder]: RootDecoder[(A, B)] = {
+      for {
+        a <- RootDecoder[A]
+        b <- RootDecoder[B]
+      } yield (a, b)
+    }
+
+    implicit def tuple3RootDecoder[A: RootDecoder, B: RootDecoder, C: RootDecoder]: RootDecoder[(A, B, C)] = {
+      for {
+        a <- RootDecoder[A]
+        b <- RootDecoder[B]
+        c <- RootDecoder[C]
+      } yield (a, b, c)
+    }
+
+    implicit def tuple4RootDecoder[A: RootDecoder, B: RootDecoder, C: RootDecoder, D: RootDecoder]: RootDecoder[(A, B, C, D)] = {
+      for {
+        a <- RootDecoder[A]
+        b <- RootDecoder[B]
+        c <- RootDecoder[C]
+        d <- RootDecoder[D]
+      } yield (a, b, c, d)
+    }
+  }
+
+  implicit def nilRootDecoder: RootDecoder[HNil] = RootDecoder.pure(HNil)
 
   // формат камунды не поддерживает рекурсию, поэтому тут отдельный тип
   implicit def hlistRootDecoder[Key <: Symbol, Head, Tail <: HList](implicit
