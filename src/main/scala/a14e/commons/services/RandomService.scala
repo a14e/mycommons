@@ -10,29 +10,21 @@ import scala.collection.generic.CanBuildFrom
 import scala.util.Random
 
 
-trait RandomGeneratingService {
-  def stringId(): String
-
+trait RandomService {
   def generateUuid(): UUID
-
-  def generateUuidString(): String
 
   def generateHex(lenght: Int): String
 
   def shuffle[T, C](xs: IterableOnce[T])(implicit bf: BuildFrom[xs.type, T, C]): C
 }
 
-class RandomGeneratingServiceImpl(random: Random) extends RandomGeneratingService {
-  override def stringId(): String = generateUuidString()
-
+class RandomServiceImpl(random: Random) extends RandomService {
   override def generateUuid(): UUID = UUID.randomUUID()
 
   override def generateHex(lenght: Int): String = {
-    val bytes = Random.nextBytes(8)
+    val bytes = random.nextBytes(8)
     BaseEncoding.base16().lowerCase().encode(bytes)
   }
-
-  override def generateUuidString(): String = generateUuid().toString
 
   override def shuffle[T, C](xs: IterableOnce[T])(implicit bf: BuildFrom[xs.type, T, C]): C = {
     random.shuffle(xs)
@@ -40,3 +32,6 @@ class RandomGeneratingServiceImpl(random: Random) extends RandomGeneratingServic
 
 }
 
+object RandomService {
+  val default: RandomService = new RandomServiceImpl(Random)
+}
