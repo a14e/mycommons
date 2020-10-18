@@ -60,9 +60,10 @@ object Routes extends LazyLogging {
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
-                      bpmnErrors: Boolean = false)
+                      bpmnErrors: Boolean = false,
+                      sendDiffOnly: Boolean = true)
                      (handle: IN => F[OUT]): Unit = {
-    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors)(ctx => handle(ctx.value))
+    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors, sendDiffOnly)(ctx => handle(ctx.value))
   }
 
   def routeEither[
@@ -70,9 +71,10 @@ object Routes extends LazyLogging {
     IN: RootDecoder,
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
-                      errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries)
+                      errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
+                      sendDiffOnly: Boolean = true)
                      (handle: IN => F[Either[BpmnError, OUT]]): Unit = {
-    routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy)(ctx => handle(ctx.value))
+    routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy, sendDiffOnly)(ctx => handle(ctx.value))
   }
 
   def routeCtxEither[
@@ -80,7 +82,8 @@ object Routes extends LazyLogging {
     IN: RootDecoder,
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
-                      errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries)
+                      errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
+                      sendDiffOnly: Boolean = true)
                      (handle: CamundaContext[F, IN] => F[Either[BpmnError, OUT]]): Unit = {
 
 
@@ -88,7 +91,8 @@ object Routes extends LazyLogging {
       processDefKey = TopicBuilder[F].processDefKey,
       topic = topic,
       lockDuration = lockDuration,
-      errorStrategy = errorStrategy
+      errorStrategy = errorStrategy,
+      sendDiffOnly = sendDiffOnly
     )(handle)
     TopicBuilder[F] += subscription
   }
@@ -99,9 +103,10 @@ object Routes extends LazyLogging {
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
-                      bpmnErrors: Boolean = false)
+                      bpmnErrors: Boolean = false,
+                      sendDiffOnly: Boolean = true)
                      (handle: CamundaContext[F, IN] => F[OUT]): Unit = {
-    routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy) {
+    routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy, sendDiffOnly) {
       ctx =>
         handle(ctx)
           .map(Either.right[BpmnError, OUT](_))
@@ -117,7 +122,8 @@ object Routes extends LazyLogging {
                                                                    lockDuration: FiniteDuration = 20.seconds,
                                                                    timeStep: FiniteDuration = 15.seconds,
                                                                    errorStrategy: ErrorStrategy = ErrorStrategy.failAndStop,
-                                                                   bpmnErrors: Boolean = false)
+                                                                   bpmnErrors: Boolean = false,
+                                                                   sendDiffOnly: Boolean = true)
                                                                   (handle: IN => F[OUT])
                                                                   (implicit
                                                                    coneffect: ConcurrentEffect[F],
@@ -125,7 +131,7 @@ object Routes extends LazyLogging {
                                                                    shift: ContextShift[F],
                                                                    timer: Timer[F]): Unit = {
     import fs2.Stream
-    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors) { ctx =>
+    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors, sendDiffOnly) { ctx =>
       val handling = Stream.eval[F, OUT](handle(ctx.value))
       val prolongating = Stream.awakeEvery[F](timeStep)
         .evalMap(_ => ctx.service.extendLock(lockDuration)) // предложевается до времени = текущее время + lockDuration

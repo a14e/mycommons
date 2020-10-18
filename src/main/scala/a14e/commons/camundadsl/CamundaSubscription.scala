@@ -33,7 +33,8 @@ class CamundaSubscriptionF[
   OUT: RootEncoder](processDefKey: String,
                     topic: String,
                     lockDuration: FiniteDuration,
-                    errorStrategy: ErrorStrategy)
+                    errorStrategy: ErrorStrategy,
+                    sendDiffOnly: Boolean = true)
                    (handler: CamundaContext[F, IN] => F[Either[BpmnError, OUT]])
   extends LazyLogging
     with CamundaSubscription[F] {
@@ -50,7 +51,7 @@ class CamundaSubscriptionF[
           case Right(_) =>
             IO.delay(logger.info(s"Handling of topic $topic completed with success"))
         }.toIO
-          .unsafeRunAsyncAndForget()
+         .unsafeRunAsyncAndForget()
       }.open()
   }
 
@@ -67,7 +68,11 @@ class CamundaSubscriptionF[
       result <- handler(context)
       _ <- result match {
         case Left(BpmnError(err)) => ErrorHandling.handleBpmnErr(err)
-        case Right(out) => wrapperService.complete(out)
+        case Right(out) if !sendDiffOnly => wrapperService.complete(out)
+        case Right(out) =>
+          // диф помогает ускорить обработку за счет экономии на io и записи лишних значений в базу =)
+          val encoded = RootEncoder[OUT].encodeDiffOnly(out, task.getAllVariablesTyped)
+          wrapperService.complete(encoded)
       }
     } yield ()).handleErrorWith(err => ErrorHandling.handleError(err, errorStrategy))
   }

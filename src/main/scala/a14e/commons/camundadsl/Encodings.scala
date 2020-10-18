@@ -9,6 +9,7 @@ import org.camunda.bpm.client.task.ExternalTask
 import org.camunda.bpm.client.variable.impl.value.JsonValueImpl
 import org.camunda.bpm.engine.variable.VariableMap
 import org.camunda.bpm.engine.variable.impl.VariableMapImpl
+import org.camunda.bpm.engine.variable.impl.value.NullValueImpl
 import org.camunda.bpm.engine.variable.impl.value.PrimitiveTypeValueImpl._
 import org.camunda.bpm.engine.variable.value.TypedValue
 import shapeless.labelled.FieldType
@@ -18,7 +19,26 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
 trait RootEncoder[T] {
+  self =>
+
   def encode(x: T): VariableMap
+
+  def encodeDiffOnly(x: T,
+                     oldValues: VariableMap): VariableMap = {
+    import scala.jdk.CollectionConverters._
+
+    val newMap = self.encode(x)
+    val duplicates = newMap.entrySet().iterator().asScala.map(_.getKey).filter { key =>
+
+      val oldCtx = oldValues.asVariableContext().resolve(key)
+      val newCtx = newMap.asVariableContext().resolve(key)
+      // чтобы проверить на тип null
+      (oldCtx.getType == newCtx.getType) && (oldCtx.getValue == oldCtx.getValue)
+    }.to(List) // тут превращаем в лист, чтобы не сломать итератор во время выполнения удаления
+    for (key <- duplicates)
+      newMap.remove(key)
+    newMap
+  }
 }
 
 object RootEncoder {
@@ -35,10 +55,13 @@ object RootEncoder {
 
   implicit def unitRootEncoder: RootEncoder[Unit] = _ => new VariableMapImpl()
 
+  implicit def varMapEncoder: RootEncoder[VariableMap] = x => x
 
   import shapeless.Witness
   import shapeless.labelled._
+
   implicit def nilRootEncoder: RootEncoder[HNil] = _ => new VariableMapImpl()
+
   // формат камунды не поддерживает рекурсию
   implicit def hlistRootEncoder[Key <: Symbol, Head, Tail <: HList](implicit
                                                                     classFieldKey: Witness.Aux[Key],
@@ -230,7 +253,7 @@ trait LowPriorityEncoders {
   implicit def optionEncoder[T: FieldEncoder]: FieldEncoder[Option[T]] =
     (name: String, valueOpt: Option[T], map: VariableMap) => {
       valueOpt match {
-        case None => map.putValue(name, null)
+        case None => map.putValueTyped(name, NullValueImpl.INSTANCE)
         case Some(x) => FieldEncoder[T].encode(name, x, map)
       }
     }

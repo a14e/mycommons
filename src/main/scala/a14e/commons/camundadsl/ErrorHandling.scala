@@ -26,7 +26,6 @@ object ErrorHandling {
 
 
   def handleBpmnErr[F[_] : Sync : ContextShift : CamundaTaskService, T](err: Throwable): F[T] = {
-    import Encodings.auto._
     case class LastError(lastError: String)
     implicit val encoder: RootEncoder[LastError] = Encodings.semiauto.derivedEncoder[LastError]()
     val service = CamundaTaskService[F]
