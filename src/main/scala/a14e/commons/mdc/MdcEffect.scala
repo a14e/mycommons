@@ -20,6 +20,11 @@ object MdcEffect {
     Sync[F].delay(MDC.put(key, value))
   }
 
+
+  def clear[F[_] : Sync](): F[Unit] = {
+    Sync[F].delay(MDC.clear())
+  }
+
   def getKey[F[_] : Sync](key: String): F[Option[String]] = {
     Sync[F].delay {
       val value = MDC.get(key)
