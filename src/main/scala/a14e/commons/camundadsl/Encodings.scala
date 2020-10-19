@@ -18,12 +18,12 @@ import shapeless.{::, HList, HNil, LabelledGeneric, Lazy, Witness, labelled}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
-trait RootEncoder[T] {
+trait RootEncoder[A] {
   self =>
 
-  def encode(x: T): VariableMap
+  def encode(x: A): VariableMap
 
-  def encodeDiffOnly(x: T,
+  def encodeDiffOnly(x: A,
                      oldValues: VariableMap): VariableMap = {
     import scala.jdk.CollectionConverters._
 
@@ -39,6 +39,16 @@ trait RootEncoder[T] {
       newMap.remove(key)
     newMap
   }
+
+  def contramap[B](f: B => A): RootEncoder[B] = x => self.encode(f(x))
+
+  def zip[B](second: RootEncoder[B]): RootEncoder[(A, B)] = {
+    case (a, b) =>
+      val result = new VariableMapImpl()
+      result.putAll(self.encode(a))
+      result.putAll(second.encode(b))
+      result
+  }
 }
 
 object RootEncoder {
@@ -49,6 +59,31 @@ object RootEncoder {
     implicit def eitherRootEncoder[A: RootEncoder, B: RootEncoder]: RootEncoder[Either[A, B]] = {
       case Left(a) => RootEncoder[A].encode(a)
       case Right(b) => RootEncoder[B].encode(b)
+    }
+  }
+
+  object tuples {
+    implicit def tuple2RootEncoder[A: RootEncoder, B: RootEncoder]: RootEncoder[(A, B)] = {
+      RootEncoder[A].zip(RootEncoder[B])
+    }
+
+    implicit def tuple3RootEncoder[A: RootEncoder, B: RootEncoder, C: RootEncoder]: RootEncoder[(A, B, C)] = {
+      case (a, b, c) =>
+        val result = new VariableMapImpl()
+        result.putAll(RootEncoder[A].encode(a))
+        result.putAll(RootEncoder[B].encode(b))
+        result.putAll(RootEncoder[C].encode(c))
+        result
+    }
+
+    implicit def tuple4RootEncoder[A: RootEncoder, B: RootEncoder, C: RootEncoder, D: RootEncoder]: RootEncoder[(A, B, C, D)] = {
+      case (a, b, c, d) =>
+        val result = new VariableMapImpl()
+        result.putAll(RootEncoder[A].encode(a))
+        result.putAll(RootEncoder[B].encode(b))
+        result.putAll(RootEncoder[C].encode(c))
+        result.putAll(RootEncoder[D].encode(d))
+        result
     }
   }
 
@@ -75,14 +110,21 @@ object RootEncoder {
   }
 }
 
-trait RootDecoder[T] {
+trait RootDecoder[A] {
   self =>
 
-  def decode(task: ExternalTask): Try[T]
+  def decode(task: ExternalTask): Try[A]
 
-  def map[B](f: T => B): RootDecoder[B] = task => self.decode(task).map(f)
+  def map[B](f: A => B): RootDecoder[B] = task => self.decode(task).map(f)
 
-  def flatMap[B](f: T => RootDecoder[B]): RootDecoder[B] = task => self.decode(task).flatMap(x => f(x).decode(task))
+  def flatMap[B](f: A => RootDecoder[B]): RootDecoder[B] = task => self.decode(task).flatMap(x => f(x).decode(task))
+
+  def zip[B](second: RootDecoder[B]): RootDecoder[(A, B)] = {
+    for {
+      a <- self
+      b <- second
+    } yield (a, b)
+  }
 }
 
 object RootDecoder {
@@ -94,14 +136,10 @@ object RootDecoder {
 
   def pure[T](x: T): RootDecoder[T] = _ => Success(x)
 
-
   // спрятано, так как небезопасно
   object tuples {
     implicit def tuple2RootDecoder[A: RootDecoder, B: RootDecoder]: RootDecoder[(A, B)] = {
-      for {
-        a <- RootDecoder[A]
-        b <- RootDecoder[B]
-      } yield (a, b)
+      RootDecoder[A].zip(RootDecoder[B])
     }
 
     implicit def tuple3RootDecoder[A: RootDecoder, B: RootDecoder, C: RootDecoder]: RootDecoder[(A, B, C)] = {
