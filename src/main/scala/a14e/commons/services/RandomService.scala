@@ -21,7 +21,7 @@ trait RandomService {
 class RandomServiceImpl(random: Random) extends RandomService {
   override def generateUuid(): UUID = UUID.randomUUID()
 
-  override def generateHex(lenght: Int): String = {
+  override def generateHex(length: Int): String = {
     val bytes = random.nextBytes(8)
     BaseEncoding.base16().lowerCase().encode(bytes)
   }

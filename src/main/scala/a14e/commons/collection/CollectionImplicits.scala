@@ -1,5 +1,7 @@
 package a14e.commons.collection
 
+import scala.collection.mutable
+
 object CollectionImplicits {
 
   implicit class RichMap[K, V](val map: Map[K, V]) extends AnyVal {

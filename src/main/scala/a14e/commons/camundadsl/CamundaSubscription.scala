@@ -2,6 +2,7 @@ package a14e.commons.camundadsl
 
 import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.mdc.{ContextEffect, MdcEffect}
+import cats.{MonadError, Traverse}
 import cats.data.EitherT
 import cats.effect.{ContextShift, Effect, IO, Sync}
 import cats.implicits._
@@ -46,16 +47,17 @@ class CamundaSubscriptionF[
       .handler { (task: ExternalTask, service: ExternalTaskService) =>
         // тут шифт, чтобы сразу перескочить на рабочие потоки и не грузить эвент луп камунды (в клиенте всего 1 поток)
         val resultIo = ContextShift[F].shift *>
-            ContextEffect.addContext[F]() *>
-            buildHandlingF(task, service) *>
-            MdcEffect.clear()
+          MdcEffect.clear() *> // чистим ресурсы и в начале и в конце
+          ContextEffect.addContext[F]() *>
+          buildHandlingF(task, service) *>
+          MdcEffect.clear()
         Effect[F].runAsync(resultIo) {
           case Left(err) =>
             IO.delay(logger.error(s"Handling of topic $topic failed with error", err))
           case Right(_) =>
             IO.delay(logger.info(s"Handling of topic $topic completed with success"))
         }.toIO
-         .unsafeRunAsyncAndForget()
+          .unsafeRunAsyncAndForget()
       }.open()
   }
 
@@ -75,6 +77,7 @@ class CamundaSubscriptionF[
         case Right(out) if !sendDiffOnly => wrapperService.complete(out)
         case Right(out) =>
           // диф помогает ускорить обработку за счет экономии на io и записи лишних значений в базу =)
+          // плюс убирает лишние изменения из истории
           val encoded = RootEncoder[OUT].encodeDiffOnly(out, task.getAllVariablesTyped)
           wrapperService.complete(encoded)
       }
