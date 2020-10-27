@@ -2,9 +2,9 @@ package a14e.commons.camundadsl
 
 import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.mdc.{ContextEffect, MdcEffect}
-import cats.{MonadError, Traverse}
+import cats.{MonadError, Traverse, ~>}
 import cats.data.EitherT
-import cats.effect.{ContextShift, Effect, IO, Sync}
+import cats.effect.{ContextShift, Effect, ExitCase, IO, Sync}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.camunda.bpm.client.ExternalTaskClient

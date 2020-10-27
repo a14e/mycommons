@@ -33,5 +33,6 @@ class RandomServiceImpl(random: Random) extends RandomService {
 }
 
 object RandomService {
-  val default: RandomService = new RandomServiceImpl(Random)
+  def default(): RandomService = new RandomServiceImpl(new Random())
+  def secure(): RandomService = new RandomServiceImpl(new Random(new SecureRandom()))
 }

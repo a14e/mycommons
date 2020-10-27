@@ -3,8 +3,9 @@ package a14e.commons.camundadsl
 import a14e.commons.camundadsl.TopicRoute.TopicBuilder
 import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.traverse.TraverseImplicits._
-import cats.Traverse
-import cats.effect.{ConcurrentEffect, ContextShift, Effect, Sync, Timer}
+import cats.arrow.FunctionK
+import cats.{Traverse, ~>}
+import cats.effect.{ConcurrentEffect, ContextShift, Effect, IO, Sync, Timer}
 import com.typesafe.scalalogging.LazyLogging
 import org.camunda.bpm.client.ExternalTaskClient
 import org.camunda.bpm.client.topic.TopicSubscription

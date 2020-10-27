@@ -61,6 +61,9 @@ javacOptions in(Compile, compile) ++= {
 }
 
 
+addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0")
+
+addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.0" cross CrossVersion.full)
 
 publishArtifact in Test := false
 
