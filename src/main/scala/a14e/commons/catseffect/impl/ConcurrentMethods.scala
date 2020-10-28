@@ -1,23 +1,23 @@
 package a14e.commons.catseffect.impl
 
 import a14e.commons.catseffect.ValueBuilder
-import a14e.commons.catseffect.impl.EffectRun.fromArrow
+import a14e.commons.catseffect.impl.EffectMethods.fromArrow
 import cats.arrow.FunctionK
 import cats.data.{ReaderT, StateT}
 import cats.effect.{Concurrent, Effect, ExitCase, Fiber, IO, Sync}
 import cats.{Applicative, ~>}
 
 // telper to build ConcurrentStarter
-trait ConcurrentStarter[F[_]] {
+trait ConcurrentMethods[F[_]] {
   def start[A](fa: F[A]): F[Fiber[F, A]]
 
   def racePair[A, B](fa: F[A], fb: F[B]): F[Either[(A, Fiber[F, B]), (Fiber[F, A], B)]]
 }
 
 
-object ConcurrentStarter {
-  def readerT[F[_] : Concurrent, CTX]: ConcurrentStarter[ReaderT[F, CTX, *]] =
-    new ConcurrentStarter[ReaderT[F, CTX, *]] {
+object ConcurrentMethods {
+  def readerT[F[_] : Concurrent, CTX]: ConcurrentMethods[ReaderT[F, CTX, *]] =
+    new ConcurrentMethods[ReaderT[F, CTX, *]] {
       type OUTER[A] = ReaderT[F, CTX, A]
 
       import cats.implicits._
@@ -47,8 +47,8 @@ object ConcurrentStarter {
 
 
   // на форках не добавляется контекст
-  def stateT[F[_] : Concurrent, CTX]: ConcurrentStarter[StateT[F, CTX, *]] =
-    new ConcurrentStarter[StateT[F, CTX, *]] {
+  def stateT[F[_] : Concurrent, CTX]: ConcurrentMethods[StateT[F, CTX, *]] =
+    new ConcurrentMethods[StateT[F, CTX, *]] {
       type OUTER[A] = StateT[F, CTX, A]
 
       import cats.implicits._

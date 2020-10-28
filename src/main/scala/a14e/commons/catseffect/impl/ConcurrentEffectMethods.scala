@@ -10,14 +10,14 @@ import scala.language.higherKinds
 import scala.util.Either
 
 // HELPER to build ConcurrentEffect
-trait RunCancellable[F[_]] {
+trait ConcurrentEffectMethods[F[_]] {
   def runCancelable[A](fa: F[A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[CancelToken[F]]
 }
 
-object RunCancellable {
+object ConcurrentEffectMethods {
 
   def fromArrow[F[_] : ConcurrentEffect : Sync, CTX, B[_]](to: F ~> B,
-                                                         from: B ~> F): RunCancellable[B] = new RunCancellable[B] {
+                                                         from: B ~> F): ConcurrentEffectMethods[B] = new ConcurrentEffectMethods[B] {
 
     override def runCancelable[A](fa: B[A])
                                  (cb: Either[Throwable, A] => IO[Unit]): SyncIO[CancelToken[B]] = {
@@ -25,7 +25,7 @@ object RunCancellable {
     }
   }
 
-  def readerT[F[_] : ConcurrentEffect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): RunCancellable[ReaderT[F, CTX, *]] = {
+  def readerT[F[_] : ConcurrentEffect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): ConcurrentEffectMethods[ReaderT[F, CTX, *]] = {
     type OUTER[A] = ReaderT[F, CTX, A]
     val to: F ~> OUTER = Arrows.readerT[F, CTX]
     val from: OUTER ~> F = ValueBuilder.readerT[F, CTX]
@@ -33,7 +33,7 @@ object RunCancellable {
     fromArrow(to, from)
   }
 
-  def stateT[F[_] : ConcurrentEffect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): RunCancellable[StateT[F, CTX, *]] = {
+  def stateT[F[_] : ConcurrentEffect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): ConcurrentEffectMethods[StateT[F, CTX, *]] = {
     type OUTER[A] = StateT[F, CTX, A]
     val to: F ~> OUTER = Arrows.stateT[F, CTX]
     val from: OUTER ~> F = ValueBuilder.stateT[F, CTX]

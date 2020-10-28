@@ -6,19 +6,19 @@ import scala.language.higherKinds
 
 object InstancesBuilder {
 
-  def buildConcurrentEffect[F[_] : Async](cStarter: ConcurrentStarter[F],
-                                          effectRun: EffectRun[F],
-                                          runCancellable: RunCancellable[F]): ConcurrentEffect[F] = new ConcurrentEffect[F] {
+  def buildConcurrentEffect[F[_] : Async](concurMethods: ConcurrentMethods[F],
+                                          effectMethods: EffectMethods[F],
+                                          concurrentEffectMethods: ConcurrentEffectMethods[F]): ConcurrentEffect[F] = new ConcurrentEffect[F] {
     override def runCancelable[A](fa: F[A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[CancelToken[F]] = {
-      runCancellable.runCancelable(fa)(cb)
+      concurrentEffectMethods.runCancelable(fa)(cb)
     }
 
-    override def runAsync[A](fa: F[A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] = effectRun.runAsync(fa)(cb)
+    override def runAsync[A](fa: F[A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] = effectMethods.runAsync(fa)(cb)
 
-    override def start[A](fa: F[A]): F[Fiber[F, A]] = cStarter.start(fa)
+    override def start[A](fa: F[A]): F[Fiber[F, A]] = concurMethods.start(fa)
 
     override def racePair[A, B](fa: F[A], fb: F[B]): F[Either[(A, Fiber[F, B]), (Fiber[F, A], B)]] =
-      cStarter.racePair(fa, fb)
+      concurMethods.racePair(fa, fb)
 
     override def async[A](k: (Either[Throwable, A] => Unit) => Unit): F[A] = Async[F].async(k)
 
@@ -43,9 +43,9 @@ object InstancesBuilder {
   }
 
 
-  def buildEffect[F[_] : Async](effectRun: EffectRun[F]): Effect[F] = new Effect[F] {
+  def buildEffect[F[_] : Async](effectMethods: EffectMethods[F]): Effect[F] = new Effect[F] {
 
-    override def runAsync[A](fa: F[A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] = effectRun.runAsync(fa)(cb)
+    override def runAsync[A](fa: F[A])(cb: Either[Throwable, A] => IO[Unit]): SyncIO[Unit] = effectMethods.runAsync(fa)(cb)
 
     override def async[A](k: (Either[Throwable, A] => Unit) => Unit): F[A] = Async[F].async(k)
 
@@ -69,12 +69,12 @@ object InstancesBuilder {
     override def pure[A](x: A): F[A] = Async[F].pure(x)
   }
 
-  def buildConcurrent[F[_] : Async](cStarter: ConcurrentStarter[F]): Concurrent[F] = new Concurrent[F] {
+  def buildConcurrent[F[_] : Async](concurrentMethods: ConcurrentMethods[F]): Concurrent[F] = new Concurrent[F] {
 
-    override def start[A](fa: F[A]): F[Fiber[F, A]] = cStarter.start(fa)
+    override def start[A](fa: F[A]): F[Fiber[F, A]] = concurrentMethods.start(fa)
 
     override def racePair[A, B](fa: F[A], fb: F[B]): F[Either[(A, Fiber[F, B]), (Fiber[F, A], B)]] =
-      cStarter.racePair(fa, fb)
+      concurrentMethods.racePair(fa, fb)
 
     override def async[A](k: (Either[Throwable, A] => Unit) => Unit): F[A] = Async[F].async(k)
 
