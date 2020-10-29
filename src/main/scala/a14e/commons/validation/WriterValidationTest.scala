@@ -26,7 +26,7 @@ object WriterValidationTest extends App {
 
     def error[F[_] : Applicative](err: => Throwable): Validator[F, Unit] = {
       try {
-        Validator.put(())(Vector(err))
+        Validator.tell(Vector(err))
       } catch {
         case NonFatal(e) => error[F](e)
       }
@@ -55,17 +55,17 @@ object WriterValidationTest extends App {
     }
 
     def pure[F[_] : Applicative, RES](x: RES): Validator[F, RES] = {
-      Validator.put(x)(Vector.empty)
+      Validator.value(x)
     }
 
-    def fromTry[F[_] : Applicative](t: Try[_]): Validator[F, Unit] = {
-      t match {
+    def fromTry[F[_] : Applicative](t: => Try[_]): Validator[F, Unit] = {
+      Try(t).flatten match {
         case Failure(exception) => error[F](exception)
         case Success(_) => empty[F]
       }
     }
 
-    def empty[F[_] : Applicative]: Validator[F, Unit] = Validator.put(())(Vector.empty)
+    def empty[F[_] : Applicative]: Validator[F, Unit] = Validator.tell(Vector.empty)
   }
 
   implicit class RichValidator[F[_], RES](validator: Validator[F, RES]) {
