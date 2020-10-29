@@ -1,9 +1,8 @@
 package a14e.commons.context
 
-import a14e.commons.catseffect.EffectBuilder
 import a14e.commons.context.Contextual.Context
 import cats.{Applicative, Functor}
-import cats.data.{ReaderT, StateT}
+import cats.data.{ReaderT, StateT, Writer, WriterT}
 import cats.effect.{CancelToken, ConcurrentEffect, ContextShift, Effect, ExitCase, Fiber, IO, Sync, SyncIO}
 import com.typesafe.scalalogging.Logger
 import org.slf4j.Marker
@@ -26,7 +25,6 @@ object Contextual extends App {
   def stateT[INNER[_] : Applicative, CTX, F[_]](read: CTX => Context): Contextual[StateT[INNER, CTX, *]] = {
     () => StateT.get[INNER, CTX].map(read)
   }
-
 
 }
 

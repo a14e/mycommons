@@ -25,12 +25,12 @@ object EffectMethods {
     }
   }
 
-  def readerT[F[_] : Effect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): EffectMethods[ReaderT[F, CTX, *]] = {
-    fromArrow(ValueBuilder.readerT[F, CTX])
+  def readerT[F[_] : Effect : Sync, CTX](init: () => F[CTX]): EffectMethods[ReaderT[F, CTX, *]] = {
+    fromArrow(Arrows.fromInit.readerT(init))
   }
 
-  def stateT[F[_] : Effect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): EffectMethods[StateT[F, CTX, *]] = {
-    fromArrow(ValueBuilder.stateT[F, CTX])
+  def stateT[F[_] : Effect : Sync, CTX](init: () => F[CTX]): EffectMethods[StateT[F, CTX, *]] = {
+    fromArrow(Arrows.fromInit.stateT(init))
   }
 
 }

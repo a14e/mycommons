@@ -16,35 +16,13 @@ trait ConcurrentMethods[F[_]] {
 
 
 object ConcurrentMethods {
-  def readerT[F[_] : Concurrent, CTX]: ConcurrentMethods[ReaderT[F, CTX, *]] =
-    new ConcurrentMethods[ReaderT[F, CTX, *]] {
-      type OUTER[A] = ReaderT[F, CTX, A]
 
-      import cats.implicits._
+  def fromConcurrent[F[_]: Concurrent]: ConcurrentMethods[F] = new ConcurrentMethods[F] {
+    override def start[A](fa: F[A]): F[Fiber[F, A]] = Concurrent[F].start(fa)
 
-
-      override def start[A](fa: OUTER[A]): OUTER[Fiber[OUTER, A]] = {
-        ReaderT { ctx =>
-          Concurrent[F].start(fa(ctx))
-            .map { fiber =>
-              fiber.mapK(Arrows.readerT[F, CTX])
-            }
-        }
-      }
-
-      override def racePair[A, B](fa: OUTER[A],
-                                  fb: OUTER[B]): OUTER[Either[(A, Fiber[OUTER, B]), (Fiber[OUTER, A], B)]] = {
-
-        ReaderT { ctx =>
-          Concurrent[F].racePair(fa(ctx), fb(ctx))
-            .map {
-              case Left((a, fiberB)) => Left((a, fiberB.mapK(Arrows.readerT[F, CTX])))
-              case Right((fiberA, b)) => Right((fiberA.mapK(Arrows.readerT[F, CTX]), b))
-            }
-        }
-      }
-    }
-
+    override def racePair[A, B](fa: F[A], fb: F[B]): F[Either[(A, Fiber[F, B]), (Fiber[F, A], B)]] =
+      Concurrent[F].racePair(fa, fb)
+  }
 
   // на форках не добавляется контекст
   def stateT[F[_] : Concurrent, CTX]: ConcurrentMethods[StateT[F, CTX, *]] =
@@ -87,8 +65,5 @@ object ConcurrentMethods {
         }
       }
 
-      private def mapFiber[T, C](fiber: Fiber[OUTER, T])(func: T => C): Fiber[OUTER, C] = {
-        Fiber(Applicative[OUTER].map(fiber.join)(func), fiber.cancel)
-      }
     }
 }

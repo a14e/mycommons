@@ -7,22 +7,20 @@ import cats.effect.{Async, Concurrent, ConcurrentEffect, Effect}
 object instances {
 
   trait concurrenteffect {
-    implicit def stateTConcurrentEffectInstance[F[_]: ConcurrentEffect, CTX]
-    (implicit valuerBuilder: ValueBuilder[F, CTX]): ConcurrentEffect[StateT[F, CTX, *]] = {
+    def stateTConcurrentEffectInstance[F[_]: ConcurrentEffect, CTX](init: () => F[CTX]): ConcurrentEffect[StateT[F, CTX, *]] = {
       // just list of helpers for 1-3 functions from ConcurrentEffect
       val concurrentMethods = ConcurrentMethods.stateT[F, CTX]
-      val effectMethods = EffectMethods.stateT[F, CTX]
-      val concurrentEffectMethods = ConcurrentEffectMethods.stateT[F, CTX]
+      val effectMethods = EffectMethods.stateT[F, CTX](init)
+      val concurrentEffectMethods = ConcurrentEffectMethods.stateT[F, CTX](init)
 
       InstancesBuilder.buildConcurrentEffect[StateT[F, CTX, *]](concurrentMethods, effectMethods, concurrentEffectMethods)
     }
 
-    implicit def readerTConcurrentEffectInstance[F[_]: ConcurrentEffect, CTX]
-    (implicit valuerBuilder: ValueBuilder[F, CTX]): ConcurrentEffect[ReaderT[F, CTX, *]] = {
+    def readerTConcurrentEffectInstance[F[_]: ConcurrentEffect, CTX](init: () => F[CTX]): ConcurrentEffect[ReaderT[F, CTX, *]] = {
       // just list of helpers for 1-3 functions from ConcurrentEffect
-      val concurrentMethods = ConcurrentMethods.readerT[F, CTX]
-      val effectMethods = EffectMethods.readerT[F, CTX]
-      val concurrentEffectMethods = ConcurrentEffectMethods.readerT[F, CTX]
+      val concurrentMethods = ConcurrentMethods.fromConcurrent[ReaderT[F, CTX, *]]
+      val effectMethods = EffectMethods.readerT[F, CTX](init)
+      val concurrentEffectMethods = ConcurrentEffectMethods.readerT[F, CTX](init)
 
       InstancesBuilder.buildConcurrentEffect[ReaderT[F, CTX, *]](concurrentMethods, effectMethods, concurrentEffectMethods)
     }
@@ -31,17 +29,15 @@ object instances {
   object concurrenteffect extends concurrenteffect
 
   trait effect {
-    implicit def stateTEffectInstance[F[_]: ConcurrentEffect, CTX]
-    (implicit valuerBuilder: ValueBuilder[F, CTX]): Effect[StateT[F, CTX, *]] = {
+    def stateTEffectInstance[F[_]: ConcurrentEffect, CTX](init: () => F[CTX]): Effect[StateT[F, CTX, *]] = {
       // just list of helpers for 1-3 functions from Effect
-      val effectMethods = EffectMethods.stateT[F, CTX]
+      val effectMethods = EffectMethods.stateT[F, CTX](init)
       InstancesBuilder.buildEffect[StateT[F, CTX, *]](effectMethods)
     }
 
-    implicit def readerTEffectInstance[F[_]: ConcurrentEffect, CTX]
-    (implicit valuerBuilder: ValueBuilder[F, CTX]): Effect[ReaderT[F, CTX, *]] = {
+    def readerTEffectInstance[F[_]: ConcurrentEffect, CTX](init: () => F[CTX]): Effect[ReaderT[F, CTX, *]] = {
       // just list of helpers for 1-3 functions from Effect
-      val effectMethods = EffectMethods.readerT[F, CTX]
+      val effectMethods = EffectMethods.readerT[F, CTX](init)
       InstancesBuilder.buildEffect[ReaderT[F, CTX, *]](effectMethods)
     }
   }
@@ -56,11 +52,6 @@ object instances {
       InstancesBuilder.buildConcurrent[StateT[F, CTX, *]](concurrentMethods)
     }
 
-    implicit def readerTConcurrentInstance[F[_]: Concurrent, CTX]: Concurrent[ReaderT[F, CTX, *]] = {
-      // helper for functions from Concurrent
-      val concurrentMethods = ConcurrentMethods.readerT[F, CTX]
-      InstancesBuilder.buildConcurrent[ReaderT[F, CTX, *]](concurrentMethods)
-    }
   }
 
   object concurrent extends concurrent

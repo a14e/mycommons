@@ -25,18 +25,18 @@ object ConcurrentEffectMethods {
     }
   }
 
-  def readerT[F[_] : ConcurrentEffect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): ConcurrentEffectMethods[ReaderT[F, CTX, *]] = {
+  def readerT[F[_] : ConcurrentEffect : Sync, CTX](init: () => F[CTX]): ConcurrentEffectMethods[ReaderT[F, CTX, *]] = {
     type OUTER[A] = ReaderT[F, CTX, A]
     val to: F ~> OUTER = Arrows.readerT[F, CTX]
-    val from: OUTER ~> F = ValueBuilder.readerT[F, CTX]
+    val from: OUTER ~> F = Arrows.fromInit.readerT[F, CTX](init)
 
     fromArrow(to, from)
   }
 
-  def stateT[F[_] : ConcurrentEffect : Sync, CTX](implicit startValueBuilder: ValueBuilder[F, CTX]): ConcurrentEffectMethods[StateT[F, CTX, *]] = {
+  def stateT[F[_] : ConcurrentEffect : Sync, CTX](init: () => F[CTX]): ConcurrentEffectMethods[StateT[F, CTX, *]] = {
     type OUTER[A] = StateT[F, CTX, A]
     val to: F ~> OUTER = Arrows.stateT[F, CTX]
-    val from: OUTER ~> F = ValueBuilder.stateT[F, CTX]
+    val from: OUTER ~> F = Arrows.fromInit.stateT[F, CTX](init: () => F[CTX])
 
     fromArrow(to, from)
   }

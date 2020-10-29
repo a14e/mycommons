@@ -19,7 +19,9 @@ class TopicRoute[F[_] : Sync](vector: List[CamundaSubscription[F]]) {
 
   import cats.implicits._
 
-  def run(client: ExternalTaskClient): F[Seq[TopicSubscription]] = {
+  def run(client: ExternalTaskClient)(implicit
+                                      shift: ContextShift[F],
+                                      effect: Effect[F]): F[Seq[TopicSubscription]] = {
     Traverse[List].serially(vector) { subscription =>
       subscription.run(client)
     }.map(_.toSeq)
@@ -56,7 +58,7 @@ object Routes extends LazyLogging {
   import cats.implicits._
 
   def route[
-    F[_] : TopicBuilder : ContextShift : Effect,
+    F[_] : TopicBuilder: Sync,
     IN: RootDecoder,
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
@@ -68,7 +70,7 @@ object Routes extends LazyLogging {
   }
 
   def routeEither[
-    F[_] : TopicBuilder : ContextShift : Effect,
+    F[_] : TopicBuilder: Sync,
     IN: RootDecoder,
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
@@ -79,7 +81,7 @@ object Routes extends LazyLogging {
   }
 
   def routeCtxEither[
-    F[_] : TopicBuilder : ContextShift : Effect,
+    F[_] : TopicBuilder,
     IN: RootDecoder,
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
@@ -99,7 +101,7 @@ object Routes extends LazyLogging {
   }
 
   def routeCtx[
-    F[_] : TopicBuilder : ContextShift : Effect,
+    F[_] : TopicBuilder: Sync,
     IN: RootDecoder,
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
@@ -121,8 +123,8 @@ object Routes extends LazyLogging {
 
   def routeWithLockUpdate[F[_], IN: RootDecoder, OUT: RootEncoder](topic: String,
                                                                    lockDuration: FiniteDuration = 20.seconds,
-                                                                   timeStep: FiniteDuration = 15.seconds,
-                                                                   errorStrategy: ErrorStrategy = ErrorStrategy.failAndStop,
+                                                                   timeStep: FiniteDuration = 13.seconds,
+                                                                   errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
                                                                    bpmnErrors: Boolean = false,
                                                                    sendDiffOnly: Boolean = true)
                                                                   (handle: IN => F[OUT])

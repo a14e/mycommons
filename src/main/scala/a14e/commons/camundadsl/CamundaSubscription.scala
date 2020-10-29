@@ -25,11 +25,13 @@ object Types {
 }
 
 trait CamundaSubscription[F[_]] {
-  def run(client: ExternalTaskClient): F[TopicSubscription]
+  def run(client: ExternalTaskClient)(implicit
+                                      shift: ContextShift[F],
+                                      effect: Effect[F]): F[TopicSubscription]
 }
 
 class CamundaSubscriptionF[
-  F[_] : ContextShift : Effect,
+  F[_],
   IN: RootDecoder,
   OUT: RootEncoder](processDefKey: String,
                     topic: String,
@@ -40,7 +42,10 @@ class CamundaSubscriptionF[
   extends LazyLogging
     with CamundaSubscription[F] {
 
-  override def run(client: ExternalTaskClient): F[TopicSubscription] = Sync[F].delay {
+  override def run(client: ExternalTaskClient)
+                  (implicit
+                   shift: ContextShift[F],
+                   effect: Effect[F]): F[TopicSubscription] = Sync[F].delay {
     client.subscribe(topic)
       .processDefinitionKey(processDefKey)
       .lockDuration(lockDuration.toMillis)
@@ -62,7 +67,10 @@ class CamundaSubscriptionF[
   }
 
   private def buildHandlingF(task: ExternalTask,
-                             javaService: ExternalTaskService): F[_] = Sync[F].defer {
+                             javaService: ExternalTaskService)
+                            (implicit
+                             shift: ContextShift[F],
+                             effect: Effect[F]): F[_] = Sync[F].defer {
     logger.info(s"Received task for topic $topic. businessKey = ${task.getBusinessKey}. ${task.getAllVariablesTyped}")
     implicit val wrapperService: CamundaTaskService[F] = new CamundaTaskService[F](task, javaService)
     val decodedF: F[IN] = Sync[F].fromTry(RootDecoder[IN].decode(task))

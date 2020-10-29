@@ -1,9 +1,9 @@
 package a14e.commons.catseffect
 
-import a14e.commons.catseffect.impl.{ConcurrentMethods, EffectMethods, ConcurrentEffectMethods}
+import a14e.commons.catseffect.impl.{ConcurrentEffectMethods, ConcurrentMethods, EffectMethods}
 import cats.arrow.FunctionK
 import cats.data.{ReaderT, StateT}
-import cats.effect.Sync
+import cats.effect.{Concurrent, ConcurrentEffect, Effect, Sync}
 import cats.~>
 
 trait ValueBuilder[F[_], CTX] {
@@ -20,23 +20,35 @@ object ValueBuilder {
 
 
   import cats.implicits._
+  import a14e.commons.catseffect.instances
 
-  def readerT[F[_] : Sync, CTX](implicit valuerBuilder: ValueBuilder[F, CTX]): ReaderT[F, CTX, *] ~> F = new FunctionK[ReaderT[F, CTX, *], F] {
-    override def apply[A](fa: ReaderT[F, CTX, A]): F[A] =
-      for {
-        init <- Sync[F].suspend(ValueBuilder.of[F, CTX].startValue())
-        res <- fa.run(init)
-      } yield res
+  trait concurrenteffect {
+    implicit def stateTConcurrentEffectInstance[F[_] : ConcurrentEffect, CTX]
+    (implicit valuerBuilder: ValueBuilder[F, CTX]): ConcurrentEffect[StateT[F, CTX, *]] = {
+      instances.concurrenteffect.stateTConcurrentEffectInstance(valuerBuilder.startValue)
+    }
+
+    def readerTConcurrentEffectInstance[F[_] : ConcurrentEffect, CTX]
+    (implicit valuerBuilder: ValueBuilder[F, CTX]): ConcurrentEffect[ReaderT[F, CTX, *]] = {
+      instances.concurrenteffect.readerTConcurrentEffectInstance(valuerBuilder.startValue)
+    }
   }
 
+  object concurrenteffect extends concurrenteffect
 
-  def stateT[F[_] : Sync, CTX](implicit valuerBuilder: ValueBuilder[F, CTX]): StateT[F, CTX, *] ~> F = new FunctionK[StateT[F, CTX, *], F] {
-    override def apply[A](fa: StateT[F, CTX, A]): F[A] =
-      for {
-        init <- Sync[F].suspend(ValueBuilder.of[F, CTX].startValue())
-        res <- fa.runA(init)
-      } yield res
+  trait effect {
+    def stateTEffectInstance[F[_] : ConcurrentEffect, CTX]
+    (implicit valuerBuilder: ValueBuilder[F, CTX]): Effect[StateT[F, CTX, *]] = {
+      instances.effect.stateTEffectInstance(valuerBuilder.startValue)
+    }
+
+    def readerTEffectInstance[F[_] : ConcurrentEffect, CTX]
+    (implicit valuerBuilder: ValueBuilder[F, CTX]): Effect[ReaderT[F, CTX, *]] = {
+      instances.effect.readerTEffectInstance(valuerBuilder.startValue)
+    }
   }
+
+  object effect extends effect
 
 
 }
