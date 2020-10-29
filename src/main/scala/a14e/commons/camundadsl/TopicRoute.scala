@@ -5,7 +5,7 @@ import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.traverse.TraverseImplicits._
 import cats.arrow.FunctionK
 import cats.{Traverse, ~>}
-import cats.effect.{ConcurrentEffect, ContextShift, Effect, IO, Sync, Timer}
+import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, Effect, IO, Sync, Timer}
 import com.typesafe.scalalogging.LazyLogging
 import org.camunda.bpm.client.ExternalTaskClient
 import org.camunda.bpm.client.topic.TopicSubscription
@@ -129,9 +129,8 @@ object Routes extends LazyLogging {
                                                                    sendDiffOnly: Boolean = true)
                                                                   (handle: IN => F[OUT])
                                                                   (implicit
-                                                                   coneffect: ConcurrentEffect[F],
+                                                                   concurrent: Concurrent[F],
                                                                    builder: TopicBuilder[F],
-                                                                   shift: ContextShift[F],
                                                                    timer: Timer[F]): Unit = {
     import fs2.Stream
     routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors, sendDiffOnly) { ctx =>

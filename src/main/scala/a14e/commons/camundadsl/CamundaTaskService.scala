@@ -21,12 +21,12 @@ object CamundaPull {
   val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 }
 
-class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
+class CamundaTaskService[F[_] : Sync: ContextShift](val task: ExternalTask,
                                       val underlying: ExternalTaskService,
                                       blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyLogging {
 
 
-  def complete()(implicit shift: ContextShift[F]): F[Unit] = {
+  def complete(): F[Unit] = {
     blocked {
       logger.info("Completing task message")
       underlying.complete(task)
@@ -34,8 +34,7 @@ class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
   }
 
 
-  def complete[T: RootEncoder](variables: T)
-                              (implicit shift: ContextShift[F]): F[Unit] = {
+  def complete[T: RootEncoder](variables: T): F[Unit] = {
     blocked {
       val encoded = RootEncoder[T].encode(variables)
       logger.info(s"Sending message $encoded")
@@ -47,8 +46,7 @@ class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
   }
 
   def complete[T: RootEncoder, B: RootEncoder](variables: T,
-                                               localVariables: B)
-                                              (implicit shift: ContextShift[F]): F[Unit] = {
+                                               localVariables: B): F[Unit] = {
     blocked {
       val encodedVars = RootEncoder[T].encode(variables)
       val encodedLocalVars = RootEncoder[B].encode(localVariables)
@@ -64,8 +62,7 @@ class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
   def handleFailure(errorMessage: String,
                     errorDetails: String,
                     retries: Int,
-                    retryTimeout: Long)
-                   (implicit shift: ContextShift[F]): F[Unit] = {
+                    retryTimeout: Long): F[Unit] = {
     blocked {
       logger.error(s"Sending error $errorMessage")
       underlying.handleFailure(
@@ -78,8 +75,7 @@ class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
     }
   }
 
-  def handleBpmnError(errorCode: String)
-                     (implicit shift: ContextShift[F]): F[Unit] = {
+  def handleBpmnError(errorCode: String): F[Unit] = {
     blocked {
       logger.error(s"Sending bpmnError code $errorCode")
       underlying.handleBpmnError(task, errorCode)
@@ -88,8 +84,7 @@ class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
 
 
   def handleBpmnError(errorCode: String,
-                      errorMessage: String)
-                     (implicit shift: ContextShift[F]): F[Unit] = {
+                      errorMessage: String): F[Unit] = {
     blocked {
       logger.error(s"Sending bpmnError code $errorCode")
       underlying.handleBpmnError(task, errorCode, errorMessage)
@@ -99,8 +94,7 @@ class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
 
   def handleBpmnError[T: RootEncoder](errorCode: String,
                                       errorMessage: String,
-                                      variables: T)
-                                     (implicit shift: ContextShift[F]): F[Unit] = {
+                                      variables: T): F[Unit] = {
     blocked {
       val encoded = RootEncoder[T].encode(variables)
       logger.error(s"Sending bpmnError  code $errorCode. error variables $encoded")
@@ -113,17 +107,15 @@ class CamundaTaskService[F[_] : Sync](val task: ExternalTask,
     }
   }
 
-  def extendLock(newDuration: FiniteDuration)
-                (implicit shift: ContextShift[F]): F[Unit] = {
+  def extendLock(newDuration: FiniteDuration): F[Unit] = {
     blocked {
       logger.info(s"Extending lock to $newDuration")
       underlying.extendLock(task, newDuration.toMillis)
     }
   }
 
-  private def blocked[T](f: => T)
-                        (implicit shift: ContextShift[F]): F[T] = {
-    shift.evalOn(this.blockingContext)(Sync[F].delay(f))
+  private def blocked[T](f: => T): F[T] = {
+    ContextShift[F].evalOn(this.blockingContext)(Sync[F].delay(f))
   }
 
 }
