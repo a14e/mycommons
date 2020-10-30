@@ -10,6 +10,7 @@ import scala.language.higherKinds
 
 object JavaFutureCompat {
 
+  // TODO убрать отсюда прокидывание контекста
   implicit class RichCompletableFuture[T](f: CompletableFuture[T]) {
     def to[F[_] : Async: ContextShift]: F[T] = {
       Sync[F].bracket(MdcEffect.getMdc[F]()) { _ =>

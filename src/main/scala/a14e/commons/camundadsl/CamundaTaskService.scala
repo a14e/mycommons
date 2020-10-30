@@ -21,9 +21,9 @@ object CamundaPull {
   val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 }
 
-class CamundaTaskService[F[_] : Sync: ContextShift](val task: ExternalTask,
-                                      val underlying: ExternalTaskService,
-                                      blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyLogging {
+class CamundaTaskService[F[_] : Sync : ContextShift](val task: ExternalTask,
+                                                     val underlying: ExternalTaskService,
+                                                     blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyLogging {
 
 
   def complete(): F[Unit] = {

@@ -4,7 +4,6 @@ import cats.arrow.FunctionK
 import cats.data.{ReaderT, StateT}
 import cats.effect.Sync
 import cats.{Applicative, ~>}
-
 import scala.language.higherKinds
 
 object Arrows {
@@ -26,7 +25,6 @@ object Arrows {
           res <- fa.run(init)
         } yield res
     }
-
 
     def stateT[F[_] : Sync, CTX](init: () => F[CTX]): StateT[F, CTX, *] ~> F = new FunctionK[StateT[F, CTX, *], F] {
       override def apply[A](fa: StateT[F, CTX, A]): F[A] =

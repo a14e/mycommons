@@ -1,6 +1,5 @@
 package a14e.commons.catseffect.impl
 
-import a14e.commons.catseffect.ValueBuilder
 import cats.arrow.FunctionK
 import cats.data.{ReaderT, StateT}
 import cats.effect.{Async, Effect, ExitCase, IO, Sync, SyncIO}

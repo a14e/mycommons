@@ -17,7 +17,7 @@ object ErrorHandling {
                                                                       strategy: ErrorStrategy): F[T] = {
     val service = CamundaTaskService[F]
     val task = service.task
-    val retriesLeft = Option(task.getRetries).map(_.intValue()).getOrElse(strategy.retries)
+    val retriesLeft = Option(task.getRetries).map(_.intValue()).getOrElse(strategy.retries) - 1
     val nextStep = strategy.retryStep.nextStep(strategy.retries - retriesLeft)
     service
       .handleFailure(err.getMessage, err.getStackTrace.mkString("|"), retriesLeft, nextStep.toMillis)

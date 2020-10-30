@@ -1,6 +1,5 @@
 package a14e.commons.catseffect.impl
 
-import a14e.commons.catseffect.ValueBuilder
 import cats.arrow.FunctionK
 import cats.data.{ReaderT, StateT}
 import cats.effect.{CancelToken, Concurrent, ConcurrentEffect, Effect, ExitCase, Fiber, IO, Sync, SyncIO}
@@ -17,7 +16,7 @@ trait ConcurrentEffectMethods[F[_]] {
 object ConcurrentEffectMethods {
 
   def fromArrow[F[_] : ConcurrentEffect : Sync, CTX, B[_]](to: F ~> B,
-                                                         from: B ~> F): ConcurrentEffectMethods[B] = new ConcurrentEffectMethods[B] {
+                                                           from: B ~> F): ConcurrentEffectMethods[B] = new ConcurrentEffectMethods[B] {
 
     override def runCancelable[A](fa: B[A])
                                  (cb: Either[Throwable, A] => IO[Unit]): SyncIO[CancelToken[B]] = {

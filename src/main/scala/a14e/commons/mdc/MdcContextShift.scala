@@ -20,10 +20,10 @@ class MdcContextShift[F[_]: Sync](context: ContextShift[F]) extends ContextShift
   override def evalOn[A](newContext: ExecutionContext)(block: F[A]): F[A] = {
 
     Sync[F].bracket(MdcEffect.getMdc[F]()) { mdc =>
-      context.evalOn(newContext) {
-        /** тут установим mdc, потом все вернем */
-        MdcEffect.withMdc(mdc)(block)
-      }
+        context.evalOn(newContext) {
+          /** тут установим mdc, потом все вернем */
+          MdcEffect.withMdc(mdc)(block)
+        }
     }(mdc => MdcEffect.setMdc(mdc)) // когда мы вернулись mdc должен остаться
   }
 

@@ -1,6 +1,7 @@
 package a14e.commons.context
 
 import a14e.commons.context.Contextual.Context
+import a14e.commons.mdc.MdcEffect
 import cats.{Applicative, Functor}
 import cats.data.{ReaderT, StateT, Writer, WriterT}
 import cats.effect.{CancelToken, ConcurrentEffect, ContextShift, Effect, ExitCase, Fiber, IO, Sync, SyncIO}
@@ -13,7 +14,7 @@ trait Contextual[F[_]] {
   def context(): F[Contextual.Context]
 }
 
-object Contextual extends App {
+object Contextual {
   def apply[F[_] : Contextual]: Contextual[F] = implicitly[Contextual[F]]
 
   type Context = Map[String, String]
@@ -26,6 +27,12 @@ object Contextual extends App {
     () => StateT.get[INNER, CTX].map(read)
   }
 
+  def mdcContext[F[_] : Sync]: Contextual[F] = {
+    import cats.implicits._
+    import scala.jdk.CollectionConverters._
+    () => MdcEffect.getMdc[F]().map(x => x.asScala.to(Map))
+  }
+
 }
 
 object Types {
@@ -33,11 +40,10 @@ object Types {
 }
 
 trait LazyReaderContext[F[_]] {
-  implicit def contextual: Contextual[F]
 
-  implicit def sync: Sync[F]
+  def logger[F[_] : Sync : Contextual] = new ContextualLogger[F](underlyingLogger)
 
-  lazy val logger = new ContextualLogger[F](Logger[this.type])
+  private lazy val underlyingLogger = Logger[this.type]
 }
 
 
