@@ -27,6 +27,8 @@ object Contextual {
   }
 
 
+  def empty[F[_]: Applicative]: Contextual[F] = () => Applicative[F].pure(Map.empty)
+
 }
 
 trait LazyContextLogging {

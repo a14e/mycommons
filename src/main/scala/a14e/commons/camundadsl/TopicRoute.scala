@@ -3,7 +3,7 @@ package a14e.commons.camundadsl
 import a14e.commons.camundadsl.TopicRoute.TopicBuilder
 import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.catseffect.CatsIoImplicits._
-import a14e.commons.context.Contextual
+import a14e.commons.context.{Contextual, LazyContextLogging}
 import cats.arrow.FunctionK
 import cats.{Traverse, ~>}
 import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, Effect, IO, Sync, Timer}
@@ -16,9 +16,10 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.language.higherKinds
 
 
-class TopicRoute[F[_]](val routes: List[CamundaSubscription[F]]) extends LazyLogging {
+class TopicRoute[F[_]](val routes: List[CamundaSubscription[F]]) extends LazyContextLogging {
 
   import cats.implicits._
+  import cats.effect.implicits._
 
   def ++(other: TopicRoute[F]): TopicRoute[F] = new TopicRoute[F](this.routes ++ other.routes)
 
@@ -35,13 +36,13 @@ class TopicRoute[F[_]](val routes: List[CamundaSubscription[F]]) extends LazyLog
                                                 shift: ContextShift[F],
                                                 effect: Effect[F],
                                                 contextual: Contextual[F]): F[Seq[TopicSubscription]] = {
-    run(client, effectRun(_, _))
+    runBy(client)(x => x)
   }
 
   type Topic = String
 
-  def run(client: ExternalTaskClient,
-          runner: (F[_], Topic) => Unit)(implicit
+  def run(client: ExternalTaskClient)
+         (runner: (F[_], Topic) => Unit)(implicit
                                          shift: ContextShift[F],
                                          sync: Sync[F],
                                          contextual: Contextual[F]): F[Seq[TopicSubscription]] = {
@@ -57,18 +58,19 @@ class TopicRoute[F[_]](val routes: List[CamundaSubscription[F]]) extends LazyLog
                                     contextual: Contextual[F],
                                     effectB: Effect[B],
                                     shiftB: ContextShift[B]): F[Seq[TopicSubscription]] = {
-    run(client, (io, topic) => effectRun(by(io), topic))
+    run(client) { (io, topic) =>
+      val withLoggingIO = io.attempt.flatMap {
+        case Left(err) =>
+          logger[F].error(s"Handling of topic $topic failed with error", err)
+        case Right(_) =>
+          logger[F].error(s"Handling of topic $topic completed with success")
+      }
+      effectRun(by(withLoggingIO))
+    }
   }
 
-  private def effectRun[B[_] : Effect : ContextShift](ioToRun: B[_], topic: String): Unit = {
-    // TODO тут можно подложить контекст из runBy
-    Effect[B].runAsync(ioToRun) {
-      case Left(err) =>
-        IO.delay(logger.error(s"Handling of topic $topic failed with error", err))
-      case Right(_) =>
-        IO.delay(logger.info(s"Handling of topic $topic completed with success"))
-    }.toIO
-      .unsafeRunAsyncAndForget()
+  private def effectRun[B[_] : Effect : ContextShift](ioToRun: B[_]): Unit = {
+    Effect[B].toIO(ioToRun).unsafeRunAsyncAndForget()
   }
 
 
