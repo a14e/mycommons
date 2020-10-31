@@ -25,6 +25,8 @@ class CamundaTaskService[F[_] : Sync : ContextShift](val task: ExternalTask,
                                                      val underlying: ExternalTaskService,
                                                      blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyLogging {
 
+  def to[B[_]: Sync: ContextShift] = new CamundaTaskService[B](task, underlying, blockingContext)
+
 
   def complete(): F[Unit] = {
     blocked {

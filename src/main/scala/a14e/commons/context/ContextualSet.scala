@@ -26,7 +26,7 @@ object ContextualSet {
   def mdcContextSet[F[_] : Sync]: ContextualSet[F] = {
     import cats.implicits._
     import scala.jdk.CollectionConverters._
-    mdc => MdcEffect.setMdc(mdc.asJava)[F]
+    mdc => MdcEffect.setMdc[F](mdc.asJava)
   }
 
 }

@@ -2,6 +2,7 @@ package a14e.commons.camundadsl
 
 import a14e.commons.camundadsl.TopicRoute.TopicBuilder
 import a14e.commons.camundadsl.Types.CamundaContext
+import a14e.commons.mdc.{ContextEffect, MdcEffect}
 import a14e.commons.traverse.TraverseImplicits._
 import cats.arrow.FunctionK
 import cats.{Traverse, ~>}
@@ -15,28 +16,72 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.language.higherKinds
 
 
-class TopicRoute[F[_] : Sync](vector: List[CamundaSubscription[F]]) {
+class TopicRoute[F[_]](vector: List[CamundaSubscription[F]]) extends LazyLogging {
 
   import cats.implicits._
 
-  def run(client: ExternalTaskClient)(implicit
-                                      shift: ContextShift[F],
-                                      effect: Effect[F]): F[Seq[TopicSubscription]] = {
+
+  def to[B[_]](to: F ~> B)
+              (implicit
+               shift: ContextShift[F],
+               effect: Sync[F]): TopicRoute[B] = {
+    new TopicRoute[B](vector.map(_.to(to)))
+  }
+
+  def runWithEffect(client: ExternalTaskClient)(implicit
+                                                shift: ContextShift[F],
+                                                effect: Effect[F]): F[Seq[TopicSubscription]] = {
+    run(client, effectRun(_, _))
+  }
+
+  type Topic = String
+
+  def run(client: ExternalTaskClient,
+          runner: (F[_], Topic) => Unit)(implicit
+                                         shift: ContextShift[F],
+                                         sync: Sync[F]): F[Seq[TopicSubscription]] = {
     Traverse[List].serially(vector) { subscription =>
-      subscription.run(client)
+      subscription.run(client, runner(_, subscription.topic))
     }.map(_.toSeq)
   }
+
+  def runBy[B[_]](client: ExternalTaskClient)
+                 (by: F[_] => B[_])(implicit
+                                    shift: ContextShift[F],
+                                    sync: Sync[F],
+                                    effectB: Effect[B],
+                                    shiftB: ContextShift[B]): F[Seq[TopicSubscription]] = {
+    run(client, (io, topic) => effectRun(by(io), topic))
+  }
+
+  private def effectRun[B[_] : Effect : ContextShift](ioToRun: B[_], topic: String): Unit = {
+
+    val resultIo = ContextShift[B].shift *>
+      MdcEffect.clear() *> // чистим ресурсы и в начале и в конце
+      ContextEffect.addContext[B]() *>
+      ioToRun *>
+      MdcEffect.clear()
+    Effect[B].runAsync(resultIo) {
+      case Left(err) =>
+        IO.delay(logger.error(s"Handling of topic $topic failed with error", err))
+      case Right(_) =>
+        IO.delay(logger.info(s"Handling of topic $topic completed with success"))
+    }.toIO
+      .unsafeRunAsyncAndForget()
+  }
+
+
 }
 
 object TopicRoute {
-  def build[F[_] : Sync](processDefKey: String)
-                        (builder: TopicBuilder[F] => Unit): TopicRoute[F] = {
+  def build[F[_]](processDefKey: String)
+                 (builder: TopicBuilder[F] => Unit): TopicRoute[F] = {
     val topicBuilder = new TopicBuilder[F](processDefKey)
     builder(topicBuilder)
     topicBuilder.build
   }
 
-  class TopicBuilder[F[_] : Sync](val processDefKey: String) {
+  class TopicBuilder[F[_]](val processDefKey: String) {
     def +=(s: CamundaSubscription[F]): TopicBuilder[F] = {
       buffer += s
       this
