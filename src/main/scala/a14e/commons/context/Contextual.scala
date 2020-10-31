@@ -39,7 +39,7 @@ object Types {
   type MIO[T] = StateT[IO, Context, T]
 }
 
-trait LazyReaderContext[F[_]] {
+trait LazyContLogger[F[_]] {
 
   def logger[F[_] : Sync : Contextual] = new ContextualLogger[F](underlyingLogger)
 
