@@ -1,8 +1,6 @@
 package a14e.commons.catseffect
 
 import java.util.concurrent.{CancellationException, CompletableFuture, CompletionException}
-
-import a14e.commons.mdc.MdcEffect
 import cats.effect.{Async, ContextShift, Sync}
 import cats.implicits._
 
@@ -11,11 +9,9 @@ import scala.language.higherKinds
 object JavaFutureCompat {
 
   // TODO убрать отсюда прокидывание контекста
-  implicit class RichCompletableFuture[T](f: CompletableFuture[T]) {
+  implicit class RichCompletableFuture[T](completableFuture: CompletableFuture[T]) {
     def to[F[_] : Async: ContextShift]: F[T] = {
-      Sync[F].bracket(MdcEffect.getMdc[F]()) { _ =>
-        futureToIo[F, T](f)
-      }(mdc => ContextShift[F].shift *> MdcEffect.setMdc(mdc)) /* мы хотим убежать из контекста фьючи как можно раньше */
+      futureToIo[F, T](completableFuture) <* ContextShift[F].shift
     }
   }
 

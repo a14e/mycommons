@@ -11,7 +11,7 @@ object CollectionImplicits {
     def filterValues(f: V => Boolean): Map[K, V] = map.iterator.collect { case (k, v) if f(v) => k -> v }.toMap
 
 
-    def revertKeysAndValues: Map[V, K] = map.map { case (k, v) => v -> k }
+    def swapKeyValue: Map[V, K] = map.map(_.swap)
 
   }
 

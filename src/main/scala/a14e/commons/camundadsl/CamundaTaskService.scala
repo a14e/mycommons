@@ -2,6 +2,7 @@ package a14e.commons.camundadsl
 
 import java.util.concurrent.Executors
 
+import a14e.commons.context.{Contextual, LazyContextLogging}
 import cats.effect.{ContextShift, Sync}
 import com.typesafe.scalalogging.LazyLogging
 import org.camunda.bpm.client.task.{ExternalTask, ExternalTaskService}
@@ -21,99 +22,102 @@ object CamundaPull {
   val blockingCamundaPull = ExecutionContext.fromExecutorService(Executors.newCachedThreadPool())
 }
 
-class CamundaTaskService[F[_] : Sync : ContextShift](val task: ExternalTask,
-                                                     val underlying: ExternalTaskService,
-                                                     blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyLogging {
+class CamundaTaskService[F[_] : Sync : ContextShift : Contextual](val task: ExternalTask,
+                                                                  val underlying: ExternalTaskService,
+                                                                  blockingContext: ExecutionContext = CamundaPull.blockingCamundaPull) extends LazyContextLogging {
 
-  def to[B[_]: Sync: ContextShift] = new CamundaTaskService[B](task, underlying, blockingContext)
+  import cats.implicits._
+
+  def to[B[_] : Sync : ContextShift : Contextual] = new CamundaTaskService[B](task, underlying, blockingContext)
 
 
   def complete(): F[Unit] = {
-    blocked {
-      logger.info("Completing task message")
-      underlying.complete(task)
-    }
+
+    logger[F].info("Completing task message") *>
+      blocked {
+        underlying.complete(task)
+      }
   }
 
 
   def complete[T: RootEncoder](variables: T): F[Unit] = {
-    blocked {
-      val encoded = RootEncoder[T].encode(variables)
-      logger.info(s"Sending message $encoded")
-      underlying.complete(
-        task,
-        encoded
-      )
-    }
+    val encoded = RootEncoder[T].encode(variables)
+    logger[F].info(s"Sending message $encoded") *>
+      blocked {
+        underlying.complete(
+          task,
+          encoded
+        )
+      }
   }
 
   def complete[T: RootEncoder, B: RootEncoder](variables: T,
                                                localVariables: B): F[Unit] = {
-    blocked {
-      val encodedVars = RootEncoder[T].encode(variables)
-      val encodedLocalVars = RootEncoder[B].encode(localVariables)
-      logger.info(s"Sending message $encodedVars.  $encodedLocalVars")
-      underlying.complete(
-        task,
-        encodedVars,
-        encodedLocalVars
-      )
-    }
+    val encodedVars = RootEncoder[T].encode(variables)
+    val encodedLocalVars = RootEncoder[B].encode(localVariables)
+    logger[F].info(s"Sending message $encodedVars.  $encodedLocalVars") *>
+      blocked {
+        underlying.complete(
+          task,
+          encodedVars,
+          encodedLocalVars
+        )
+      }
   }
 
   def handleFailure(errorMessage: String,
                     errorDetails: String,
                     retries: Int,
                     retryTimeout: Long): F[Unit] = {
-    blocked {
-      logger.error(s"Sending error $errorMessage")
-      underlying.handleFailure(
-        task,
-        errorMessage,
-        errorDetails,
-        retries, // TODO продумать стратегию ретраев
-        retryTimeout
-      )
-    }
+    logger[F].error(s"Sending error $errorMessage") *>
+      blocked {
+        underlying.handleFailure(
+          task,
+          errorMessage,
+          errorDetails,
+          retries, // TODO продумать стратегию ретраев
+          retryTimeout
+        )
+      }
   }
 
   def handleBpmnError(errorCode: String): F[Unit] = {
-    blocked {
-      logger.error(s"Sending bpmnError code $errorCode")
-      underlying.handleBpmnError(task, errorCode)
-    }
+    logger[F].error(s"Sending bpmnError code $errorCode") *>
+      blocked {
+        underlying.handleBpmnError(task, errorCode)
+      }
   }
 
 
   def handleBpmnError(errorCode: String,
                       errorMessage: String): F[Unit] = {
-    blocked {
-      logger.error(s"Sending bpmnError code $errorCode")
-      underlying.handleBpmnError(task, errorCode, errorMessage)
-    }
+    logger[F].error(s"Sending bpmnError code $errorCode") *>
+      blocked {
+        underlying.handleBpmnError(task, errorCode, errorMessage)
+      }
   }
 
 
   def handleBpmnError[T: RootEncoder](errorCode: String,
                                       errorMessage: String,
                                       variables: T): F[Unit] = {
-    blocked {
-      val encoded = RootEncoder[T].encode(variables)
-      logger.error(s"Sending bpmnError  code $errorCode. error variables $encoded")
-      underlying.handleBpmnError(
-        task,
-        errorCode,
-        errorMessage,
-        RootEncoder[T].encode(variables)
-      )
-    }
+    val encoded = RootEncoder[T].encode(variables)
+    logger[F].error(s"Sending bpmnError  code $errorCode. error variables $encoded") *>
+      blocked {
+        underlying.handleBpmnError(
+          task,
+          errorCode,
+          errorMessage,
+          RootEncoder[T].encode(variables)
+        )
+      }
   }
 
   def extendLock(newDuration: FiniteDuration): F[Unit] = {
-    blocked {
-      logger.info(s"Extending lock to $newDuration")
-      underlying.extendLock(task, newDuration.toMillis)
-    }
+    logger[F].info(s"Extending lock to $newDuration") *>
+      blocked {
+        underlying.extendLock(task, newDuration.toMillis)
+      }
   }
 
   private def blocked[T](f: => T): F[T] = {

@@ -1,6 +1,5 @@
 package a14e.commons.context
 
-import a14e.commons.mdc.MdcEffect
 import cats.{Applicative, FlatMap, Monad}
 import cats.data.{ReaderT, StateT}
 import cats.effect.Sync
@@ -21,12 +20,6 @@ object ContextualSet {
         _ <- StateT.set[F, CTX](newCtx)
       } yield ()
     }
-  }
-
-  def mdcContextSet[F[_] : Sync]: ContextualSet[F] = {
-    import cats.implicits._
-    import scala.jdk.CollectionConverters._
-    mdc => MdcEffect.setMdc[F](mdc.asJava)
   }
 
 }

@@ -1,7 +1,7 @@
 package a14e.commons.camundadsl
 
 import a14e.commons.camundadsl.Types.CamundaContext
-import a14e.commons.mdc.{ContextEffect, MdcEffect}
+import a14e.commons.context.{Contextual, LazyContextLogging}
 import cats.{MonadError, Traverse, ~>}
 import cats.data.EitherT
 import cats.effect.{ContextShift, Effect, ExitCase, IO, Sync}
@@ -20,7 +20,7 @@ object Types {
                                       task: ExternalTask,
                                       businessKey: String,
                                       value: IN) {
-    def to[B[_] : Sync : ContextShift]: CamundaContext[B, IN] = copy(service = service.to[B])
+    def to[B[_] : Sync : ContextShift: Contextual]: CamundaContext[B, IN] = copy(service = service.to[B])
   }
 
 
@@ -33,12 +33,14 @@ trait CamundaSubscription[F[_]] {
           runCallBack: F[_] => Unit)
          (implicit
           shift: ContextShift[F],
-          sync: Sync[F]): F[TopicSubscription]
+          sync: Sync[F],
+         cont: Contextual[F]): F[TopicSubscription]
 
   def to[B[_]](to: F ~> B)
               (implicit
                sync: Sync[F],
-               shift: ContextShift[F]): CamundaSubscription[B]
+               shift: ContextShift[F],
+               cont: Contextual[F]): CamundaSubscription[B]
 }
 
 class CamundaSubscriptionF[
@@ -50,14 +52,15 @@ class CamundaSubscriptionF[
                     errorStrategy: ErrorStrategy,
                     sendDiffOnly: Boolean = true)
                    (handler: CamundaContext[F, IN] => F[Either[BpmnError, OUT]])
-  extends LazyLogging
+  extends LazyContextLogging
     with CamundaSubscription[F] {
   self =>
 
   override def to[B[_]](to: F ~> B)
                        (implicit
                         sync: Sync[F],
-                        shift: ContextShift[F]): CamundaSubscriptionF[B, IN, OUT] = {
+                        shift: ContextShift[F],
+                        cont: Contextual[F]): CamundaSubscriptionF[B, IN, OUT] = {
     new CamundaSubscriptionF[B, IN, OUT](
       self.processDefKey,
       self.topic,
@@ -73,13 +76,14 @@ class CamundaSubscriptionF[
                    runCallBack: F[_] => Unit)
                   (implicit
                    shift: ContextShift[F],
-                   effect: Sync[F]): F[TopicSubscription] = Sync[F].delay {
+                   effect: Sync[F],
+                   cont: Contextual[F]): F[TopicSubscription] = Sync[F].delay {
     client.subscribe(topic)
       .processDefinitionKey(processDefKey)
       .lockDuration(lockDuration.toMillis)
       .handler { (task: ExternalTask, service: ExternalTaskService) =>
         // тут шифт, чтобы сразу перескочить на рабочие потоки и не грузить эвент луп камунды (в клиенте всего 1 поток)
-        runCallBack(buildHandlingF(task, service))
+        runCallBack(ContextShift[F].shift *> buildHandlingF(task, service))
       }.open()
   }
 
@@ -87,12 +91,13 @@ class CamundaSubscriptionF[
                              javaService: ExternalTaskService)
                             (implicit
                              shift: ContextShift[F],
-                             sync: Sync[F]): F[_] = Sync[F].defer {
-    logger.info(s"Received task for topic $topic. businessKey = ${task.getBusinessKey}. ${task.getAllVariablesTyped}")
+                             sync: Sync[F],
+                             cont: Contextual[F]): F[_] = Sync[F].defer {
     implicit val wrapperService: CamundaTaskService[F] = new CamundaTaskService[F](task, javaService)
     val decodedF: F[IN] = Sync[F].fromTry(RootDecoder[IN].decode(task))
       .handleErrorWith(err => ErrorHandling.handleError(err, ErrorStrategy.failAndStop))
 
+    logger[F].info(s"Received task for topic $topic. businessKey = ${task.getBusinessKey}. ${task.getAllVariablesTyped}") *>
     (for {
       decoded <- decodedF
       context = CamundaContext(wrapperService, task, task.getBusinessKey, decoded)

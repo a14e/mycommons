@@ -1,7 +1,6 @@
 package a14e.commons.context
 
 import a14e.commons.context.Contextual.Context
-import a14e.commons.mdc.MdcEffect
 import cats.{Applicative, Functor}
 import cats.data.{ReaderT, StateT, Writer, WriterT}
 import cats.effect.{CancelToken, ConcurrentEffect, ContextShift, Effect, ExitCase, Fiber, IO, Sync, SyncIO}
@@ -27,15 +26,10 @@ object Contextual {
     () => StateT.get[INNER, CTX].map(read)
   }
 
-  def mdcContext[F[_] : Sync]: Contextual[F] = {
-    import cats.implicits._
-    import scala.jdk.CollectionConverters._
-    () => MdcEffect.getMdc[F]().map(x => x.asScala.to(Map))
-  }
 
 }
 
-trait LazyContLogger[F[_]] {
+trait LazyContextLogging {
 
   def logger[F[_] : Sync : Contextual] = new ContextualLogger[F](underlyingLogger)
 
