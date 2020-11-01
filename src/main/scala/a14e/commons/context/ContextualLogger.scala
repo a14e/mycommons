@@ -108,6 +108,7 @@ class ContextualLogger[F[_] : Sync : Contextual](val underlying: Logger) {
       ctx <- Contextual[F].context()
       _ = MDC.setContextMap(ctx.asJava)
       _ = block
+      _ = MDC.clear()
     } yield ()
   }
 }

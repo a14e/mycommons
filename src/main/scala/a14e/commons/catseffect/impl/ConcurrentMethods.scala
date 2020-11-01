@@ -23,7 +23,6 @@ object ConcurrentMethods {
       Concurrent[F].racePair(fa, fb)
   }
 
-  // на форках не добавляется контекст
   def stateT[F[_] : Concurrent, CTX](merge: (CTX, CTX) => CTX): ConcurrentMethods[StateT[F, CTX, *]] =
     new ConcurrentMethods[StateT[F, CTX, *]] {
       type OUTER[A] = StateT[F, CTX, A]
