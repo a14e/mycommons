@@ -12,7 +12,7 @@ case class MigrationsConfigs(url: String,
                              migrationOnStart: Boolean)
 
 
-object MigrationsConfigsReader {
+object MigrationsConfigs {
   def from(config: Config, path: String = "migration"): MigrationsConfigs = {
     import pureconfig.generic.auto._
 
