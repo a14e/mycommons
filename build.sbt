@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.3.13"
+version := "0.3.14"
 
 
 organization := "com.github.a14e"
@@ -13,6 +13,8 @@ val akkaHttpVersion = "10.1.8"
 val akkaStreamsVersion = "2.5.23"
 val playJsonVersion = "2.7.4"
 
+resolvers +=
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 
 libraryDependencies ++= Seq(
 
