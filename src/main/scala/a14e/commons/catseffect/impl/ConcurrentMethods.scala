@@ -6,7 +6,7 @@ import cats.data.{ReaderT, StateT}
 import cats.effect.{CancelToken, Concurrent, Effect, ExitCase, Fiber, IO, Sync}
 import cats.{Applicative, ~>}
 
-// telper to build ConcurrentStarter
+// helper to build
 trait ConcurrentMethods[F[_]] {
   def start[A](fa: F[A]): F[Fiber[F, A]]
 

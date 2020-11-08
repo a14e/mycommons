@@ -33,7 +33,8 @@ trait RootEncoder[A] {
       val oldCtx = oldValues.asVariableContext().resolve(key)
       val newCtx = newMap.asVariableContext().resolve(key)
       // чтобы проверить на тип null
-      (oldCtx.getType == newCtx.getType) && (oldCtx.getValue == oldCtx.getValue)
+      (oldCtx != null) &&
+        (oldCtx.getType == newCtx.getType) && (oldCtx.getValue == oldCtx.getValue)
     }.to(List) // тут превращаем в лист, чтобы не сломать итератор во время выполнения удаления
     for (key <- duplicates)
       newMap.remove(key)
@@ -332,15 +333,15 @@ object FieldDecoder extends LowPriorityDecoders {
 
   def apply[T: FieldDecoder]: FieldDecoder[T] = implicitly[FieldDecoder[T]]
 
-  implicit lazy val stringDecoderCamund: FieldDecoder[String] = (name, task) => task.getVariable(name)
-  implicit lazy val numberDecoderCamund: FieldDecoder[Number] = (name, task) => task.getVariable(name)
-  implicit lazy val shortDecoderCamund: FieldDecoder[Short] = (name, task) => task.getVariable(name)
-  implicit lazy val longDecoderCamund: FieldDecoder[Long] = (name, task) => task.getVariable(name)
-  implicit lazy val intDecoderCamund: FieldDecoder[Int] = (name, task) => task.getVariable(name)
-  implicit lazy val doubleDecoderCamund: FieldDecoder[Double] = (name, task) => task.getVariable(name)
-  implicit lazy val dateDecoderCamund: FieldDecoder[Date] = (name, task) => task.getVariable(name)
-  implicit lazy val bytesDecoderCamund: FieldDecoder[Array[Byte]] = (name, task) => task.getVariable(name)
-  implicit lazy val boolDecoderCamund: FieldDecoder[Boolean] = (name, task) => task.getVariable(name)
+  implicit lazy val stringDecoderCamund: FieldDecoder[String] = (name, task) => Try(task.getVariable[String](name))
+  implicit lazy val numberDecoderCamund: FieldDecoder[Number] = (name, task) => Try(task.getVariable[Number] (name))
+  implicit lazy val shortDecoderCamund: FieldDecoder[Short] = (name, task) => Try(task.getVariable[Short](name))
+  implicit lazy val longDecoderCamund: FieldDecoder[Long] = (name, task) => Try(task.getVariable[Long](name))
+  implicit lazy val intDecoderCamund: FieldDecoder[Int] = (name, task) => Try(task.getVariable[Int](name))
+  implicit lazy val doubleDecoderCamund: FieldDecoder[Double] = (name, task) => Try(task.getVariable[Double](name))
+  implicit lazy val dateDecoderCamund: FieldDecoder[Date] = (name, task) => Try(task.getVariable[Date](name))
+  implicit lazy val bytesDecoderCamund: FieldDecoder[Array[Byte]] = (name, task) => Try(task.getVariable[Array[Byte]](name))
+  implicit lazy val boolDecoderCamund: FieldDecoder[Boolean] = (name, task) => Try(task.getVariable[Boolean](name))
 
 
   implicit lazy val uuidDecoderCamund: FieldDecoder[UUID] = FieldDecoder[String].map(UUID.fromString)
