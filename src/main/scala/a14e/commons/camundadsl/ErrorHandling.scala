@@ -21,7 +21,7 @@ object ErrorHandling {
     val nextStep = strategy.retryStep.nextStep(strategy.retries - retriesLeft)
     service
       .handleFailure(err.getMessage, err.getStackTrace.mkString("|"), retriesLeft, nextStep.toMillis)
-      .flatMap(_ => throw err)
+      .flatMap(_ => Sync[F].raiseError(err))
   }
 
 

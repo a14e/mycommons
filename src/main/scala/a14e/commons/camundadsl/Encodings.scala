@@ -34,7 +34,7 @@ trait RootEncoder[A] {
       val newCtx = newMap.asVariableContext().resolve(key)
       // чтобы проверить на тип null
       (oldCtx != null) &&
-        (oldCtx.getType == newCtx.getType) && (oldCtx.getValue == oldCtx.getValue)
+        (oldCtx.getType == newCtx.getType) && (oldCtx.getValue == newCtx.getValue)
     }.to(List) // тут превращаем в лист, чтобы не сломать итератор во время выполнения удаления
     for (key <- duplicates)
       newMap.remove(key)

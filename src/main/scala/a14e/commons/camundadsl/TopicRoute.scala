@@ -63,7 +63,7 @@ class TopicRoute[F[_]](val routes: List[CamundaSubscription[F]]) extends LazyCon
         case Left(err) =>
           logger[F].error(s"Handling of topic $topic failed with error", err)
         case Right(_) =>
-          logger[F].error(s"Handling of topic $topic completed with success")
+          logger[F].info(s"Handling of topic $topic completed with success")
       }
       effectRun(by(withLoggingIO))
     }
