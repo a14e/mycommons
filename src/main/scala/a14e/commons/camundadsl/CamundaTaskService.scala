@@ -28,9 +28,6 @@ class CamundaTaskService[F[_] : Sync : ContextShift : Contextual](val task: Exte
 
   import cats.implicits._
 
-  def to[B[_] : Sync : ContextShift : Contextual] = new CamundaTaskService[B](task, underlying, blockingContext)
-
-
   def complete(): F[Unit] = {
 
     logger[F].info("Completing task message") *>

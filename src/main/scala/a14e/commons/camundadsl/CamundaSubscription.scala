@@ -1,10 +1,12 @@
 package a14e.commons.camundadsl
 
+import java.util.concurrent.atomic.AtomicLong
+
 import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.context.{Contextual, LazyContextLogging}
 import cats.{MonadError, Traverse, ~>}
 import cats.data.EitherT
-import cats.effect.{ContextShift, Effect, ExitCase, IO, Sync}
+import cats.effect.{ConcurrentEffect, ContextShift, Effect, ExitCase, IO, Sync}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.camunda.bpm.client.ExternalTaskClient
@@ -19,28 +21,25 @@ object Types {
   case class CamundaContext[F[_], IN](service: CamundaTaskService[F],
                                       task: ExternalTask,
                                       businessKey: String,
-                                      value: IN) {
-    def to[B[_] : Sync : ContextShift: Contextual]: CamundaContext[B, IN] = copy(service = service.to[B])
-  }
-
+                                      value: IN)
 
 }
 
 trait CamundaSubscription[F[_]] {
-  val topic: String
+  def topic: String
 
-  def run(client: ExternalTaskClient,
-          runCallBack: F[_] => Unit)
+  def maxParallelism: Int
+
+
+  def differentLoop: Option[String]
+
+  def run(client: ExternalTaskClient)
          (implicit
           shift: ContextShift[F],
-          sync: Sync[F],
-         cont: Contextual[F]): F[TopicSubscription]
+          sync: ConcurrentEffect[F],
+          cont: Contextual[F]): F[TopicSubscription]
 
-  def to[B[_]](to: F ~> B)
-              (implicit
-               sync: Sync[F],
-               shift: ContextShift[F],
-               cont: Contextual[F]): CamundaSubscription[B]
+
 }
 
 class CamundaSubscriptionF[
@@ -50,42 +49,47 @@ class CamundaSubscriptionF[
                     override val topic: String,
                     lockDuration: FiniteDuration,
                     errorStrategy: ErrorStrategy,
-                    sendDiffOnly: Boolean = true)
+                    sendDiffOnly: Boolean,
+                    override val maxParallelism: Int,
+                    override val differentLoop: Option[String] = None)
                    (handler: CamundaContext[F, IN] => F[Either[BpmnError, OUT]])
   extends LazyContextLogging
     with CamundaSubscription[F] {
   self =>
 
-  override def to[B[_]](to: F ~> B)
-                       (implicit
-                        sync: Sync[F],
-                        shift: ContextShift[F],
-                        cont: Contextual[F]): CamundaSubscriptionF[B, IN, OUT] = {
-    new CamundaSubscriptionF[B, IN, OUT](
-      self.processDefKey,
-      self.topic,
-      self.lockDuration,
-      self.errorStrategy,
-      self.sendDiffOnly)({ ctx: CamundaContext[B, IN] =>
-      val newCtx = ctx.to[F]
-      to(handler(newCtx))
-    })
-  }
+  import cats.effect.implicits._
+  import cats.implicits._
 
-  override def run(client: ExternalTaskClient,
-                   runCallBack: F[_] => Unit)
+
+  override def run(client: ExternalTaskClient)
                   (implicit
                    shift: ContextShift[F],
-                   effect: Sync[F],
+                   effect: ConcurrentEffect[F],
                    cont: Contextual[F]): F[TopicSubscription] = Sync[F].delay {
     client.subscribe(topic)
       .processDefinitionKey(processDefKey)
       .lockDuration(lockDuration.toMillis)
       .handler { (task: ExternalTask, service: ExternalTaskService) =>
+        val parallelism = parallelismCounter.incrementAndGet()
         // тут шифт, чтобы сразу перескочить на рабочие потоки и не грузить эвент луп камунды (в клиенте всего 1 поток)
-        runCallBack(ContextShift[F].shift *> buildHandlingF(task, service))
+        val io = (ContextShift[F].shift *> buildHandlingF(task, service))
+          .attempt
+          .flatMap {
+            case Left(err) =>
+              logger[F].error(s"Handling of topic $topic failed with error", err)
+            case Right(_) =>
+              logger[F].info(s"Handling of topic $topic completed with success")
+          }
+          .toIO
+          .guarantee(IO.delay(parallelismCounter.decrementAndGet()))
+
+        // simple backpressure =)
+        if (parallelism < maxParallelism) io.unsafeRunAsyncAndForget()
+        else io.unsafeRunSync()
       }.open()
   }
+
+  private val parallelismCounter = new AtomicLong(0L)
 
   private def buildHandlingF(task: ExternalTask,
                              javaService: ExternalTaskService)

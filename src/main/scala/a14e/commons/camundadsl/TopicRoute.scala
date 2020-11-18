@@ -5,6 +5,7 @@ import a14e.commons.camundadsl.Types.CamundaContext
 import a14e.commons.catseffect.CatsIoImplicits._
 import a14e.commons.context.{Contextual, LazyContextLogging}
 import cats.arrow.FunctionK
+import cats.effect.concurrent.{MVar, MVar2}
 import cats.{Traverse, ~>}
 import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, Effect, IO, Sync, Timer}
 import com.typesafe.scalalogging.LazyLogging
@@ -24,55 +25,46 @@ class TopicRoute[F[_]](val routes: List[CamundaSubscription[F]]) extends LazyCon
   def ++(other: TopicRoute[F]): TopicRoute[F] = new TopicRoute[F](this.routes ++ other.routes)
 
 
-  def to[B[_]](to: F ~> B)
-              (implicit
-               shift: ContextShift[F],
-               effect: Sync[F],
-               contextual: Contextual[F]): TopicRoute[B] = {
-    new TopicRoute[B](routes.map(_.to(to)))
-  }
-
-  def runWithEffect(client: ExternalTaskClient)(implicit
-                                                shift: ContextShift[F],
-                                                effect: Effect[F],
-                                                contextual: Contextual[F]): F[Seq[TopicSubscription]] = {
-    runBy(client)(x => x)
-  }
-
   type Topic = String
 
-  def run(client: ExternalTaskClient)
-         (runner: (F[_], Topic) => Unit)(implicit
-                                         shift: ContextShift[F],
-                                         sync: Sync[F],
-                                         contextual: Contextual[F]): F[Seq[TopicSubscription]] = {
-    Sync[F].serially(routes) { subscription =>
-      subscription.run(client, runner(_, subscription.topic))
-    }.map(_.toSeq)
-  }
+  def run(buildClient: => F[ExternalTaskClient])(implicit
+                                                 shift: ContextShift[F],
+                                                 sync: ConcurrentEffect[F],
+                                                 contextual: Contextual[F]): F[Seq[TopicSubscription]] = {
 
-  def runBy[B[_]](client: ExternalTaskClient)
-                 (by: F[_] => B[_])(implicit
-                                    shift: ContextShift[F],
-                                    sync: Sync[F],
-                                    contextual: Contextual[F],
-                                    effectB: Effect[B],
-                                    shiftB: ContextShift[B]): F[Seq[TopicSubscription]] = {
-    run(client) { (io, topic) =>
-      val withLoggingIO = io.attempt.flatMap {
-        case Left(err) =>
-          logger[F].error(s"Handling of topic $topic failed with error", err)
-        case Right(_) =>
-          logger[F].info(s"Handling of topic $topic completed with success")
+    def getClientCached(mvar: MVar2[F, Map[String, ExternalTaskClient]],
+                        name: String): F[ExternalTaskClient] = {
+      mvar.modify { clients =>
+        clients.get(name) match {
+          case None =>
+            Sync[F].defer(buildClient).map { client =>
+              val newClients = clients + (name -> client)
+              newClients -> client
+            }
+          case Some(client) =>
+            Sync[F].pure(clients -> client)
+        }
       }
-      effectRun(by(withLoggingIO))
     }
-  }
+    import fs2.Stream
 
-  private def effectRun[B[_] : Effect : ContextShift](ioToRun: B[_]): Unit = {
-    Effect[B].toIO(ioToRun).unsafeRunAsyncAndForget()
-  }
+    (for {
+      mvar <- Stream.eval(MVar.of(Map.empty[String, ExternalTaskClient]))
+      commonClient <- Stream.eval(buildClient)
+      subscription <- Stream.iterable(routes)
 
+      client <- Stream.eval {
+        subscription.differentLoop
+          .map(getClientCached(mvar, _))
+          .getOrElse(Sync[F].pure(commonClient))
+      }
+      result <- Stream.eval(subscription.run(client))
+    } yield result)
+      .compile
+      .toVector
+      .map(_.toSeq)
+
+  }
 
 }
 
@@ -112,9 +104,19 @@ object Routes extends LazyLogging {
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
                       bpmnErrors: Boolean = false,
-                      sendDiffOnly: Boolean = true)
+                      sendDiffOnly: Boolean = true,
+                      maxParallelism: Int = 2,
+                      differentLoop: Option[String] = None)
                      (handle: IN => F[OUT]): Unit = {
-    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors, sendDiffOnly)(ctx => handle(ctx.value))
+    routeCtx[F, IN, OUT](
+      topic = topic,
+      lockDuration = lockDuration,
+      errorStrategy = errorStrategy,
+      bpmnErrors = bpmnErrors,
+      sendDiffOnly = sendDiffOnly,
+      maxParallelism = maxParallelism,
+      differentLoop = differentLoop
+    )(ctx => handle(ctx.value))
   }
 
   def routeEither[
@@ -123,9 +125,18 @@ object Routes extends LazyLogging {
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
-                      sendDiffOnly: Boolean = true)
+                      sendDiffOnly: Boolean = true,
+                      maxParallelism: Int = 2,
+                      differentLoop: Option[String] = None)
                      (handle: IN => F[Either[BpmnError, OUT]]): Unit = {
-    routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy, sendDiffOnly)(ctx => handle(ctx.value))
+    routeCtxEither[F, IN, OUT](
+      topic = topic,
+      lockDuration = lockDuration,
+      errorStrategy = errorStrategy,
+      sendDiffOnly = sendDiffOnly,
+      maxParallelism = maxParallelism,
+      differentLoop = differentLoop
+    )(ctx => handle(ctx.value))
   }
 
   def routeCtxEither[
@@ -134,7 +145,9 @@ object Routes extends LazyLogging {
     OUT: RootEncoder](topic: String,
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
-                      sendDiffOnly: Boolean = true)
+                      sendDiffOnly: Boolean = true,
+                      maxParallelism: Int = 2,
+                      differentLoop: Option[String] = None)
                      (handle: CamundaContext[F, IN] => F[Either[BpmnError, OUT]]): Unit = {
 
 
@@ -143,7 +156,9 @@ object Routes extends LazyLogging {
       topic = topic,
       lockDuration = lockDuration,
       errorStrategy = errorStrategy,
-      sendDiffOnly = sendDiffOnly
+      sendDiffOnly = sendDiffOnly,
+      maxParallelism = maxParallelism,
+      differentLoop = differentLoop
     )(handle)
     TopicBuilder[F] += subscription
   }
@@ -155,9 +170,11 @@ object Routes extends LazyLogging {
                       lockDuration: FiniteDuration = 20.seconds,
                       errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
                       bpmnErrors: Boolean = false,
-                      sendDiffOnly: Boolean = true)
+                      sendDiffOnly: Boolean = true,
+                      maxParallelism: Int = 2,
+                      differentLoop: Option[String] = None)
                      (handle: CamundaContext[F, IN] => F[OUT]): Unit = {
-    routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy, sendDiffOnly) {
+    routeCtxEither[F, IN, OUT](topic, lockDuration, errorStrategy, sendDiffOnly, maxParallelism, differentLoop) {
       ctx =>
         handle(ctx)
           .map(Either.right[BpmnError, OUT](_))
@@ -174,17 +191,19 @@ object Routes extends LazyLogging {
                                                                    timeStep: FiniteDuration = 13.seconds,
                                                                    errorStrategy: ErrorStrategy = ErrorStrategy.simpleExpRetries,
                                                                    bpmnErrors: Boolean = false,
-                                                                   sendDiffOnly: Boolean = true)
+                                                                   sendDiffOnly: Boolean = true,
+                                                                   maxParallelism: Int = 100,
+                                                                   differentLoop: Option[String] = None)
                                                                   (handle: IN => F[OUT])
                                                                   (implicit
                                                                    concurrent: Concurrent[F],
                                                                    builder: TopicBuilder[F],
                                                                    timer: Timer[F]): Unit = {
     import fs2.Stream
-    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors, sendDiffOnly) { ctx =>
+    routeCtx[F, IN, OUT](topic, lockDuration, errorStrategy, bpmnErrors, sendDiffOnly, maxParallelism, differentLoop) { ctx =>
       val handling = Stream.eval[F, OUT](handle(ctx.value))
       val prolongating = Stream.awakeEvery[F](timeStep)
-        .evalMap(_ => ctx.service.extendLock(lockDuration)) // предложевается до времени = текущее время + lockDuration
+        .evalMap(_ => ctx.service.extendLock(lockDuration)) // продлевается до времени = текущее время + lockDuration
         .filter(_ => false)
         .map(_.asInstanceOf[OUT])
 
