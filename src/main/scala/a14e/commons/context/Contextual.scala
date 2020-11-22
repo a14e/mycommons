@@ -22,7 +22,7 @@ object Contextual {
     () => ReaderT.ask[INNER, CTX].map(read)
   }
 
-  def stateT[INNER[_] : Applicative, CTX, F[_]](read: CTX => Context): Contextual[StateT[INNER, CTX, *]] = {
+  def stateT[INNER[_] : Applicative, CTX](read: CTX => Context): Contextual[StateT[INNER, CTX, *]] = {
     () => StateT.get[INNER, CTX].map(read)
   }
 
