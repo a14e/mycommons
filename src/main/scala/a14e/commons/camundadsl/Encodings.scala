@@ -309,23 +309,12 @@ trait FieldDecoder[T] {
   def decode(name: String,
              task: ExternalTask): Try[T] = {
     val res = docodeImpl(name, task)
-    if (res == null && !nullEnabled)
-      Failure(new RuntimeException("null value is not supported here"))
+    if (res == null) Failure(new RuntimeException("null value is not supported here"))
     else res
   }
 
   protected def docodeImpl(name: String,
                            task: ExternalTask): Try[T]
-
-  protected def nullEnabled = false
-
-  def enableNull: FieldDecoder[T] = new FieldDecoder[T] {
-    override def docodeImpl(name: String,
-                            task: ExternalTask): Try[T] = self.docodeImpl(name, task)
-
-    protected override def nullEnabled = true
-  }
-
 
 }
 
@@ -374,5 +363,9 @@ trait LowPriorityDecoders {
     } yield result).toTry
   }
 
-  implicit def optionDecoder[T: FieldDecoder]: FieldDecoder[Option[T]] = FieldDecoder[T].map(Option(_)).enableNull
+  implicit def optionDecoder[T: FieldDecoder]: FieldDecoder[Option[T]] = {
+    (name, task) =>
+      if (task.getVariable[java.util.Objects](name) eq null) Try(Option.empty[T])
+      else FieldDecoder[T].decode(name, task).map(Some.apply)
+  }
 }
