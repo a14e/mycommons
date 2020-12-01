@@ -57,6 +57,13 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser"
 ).map(_ % circeVersion)
 
+libraryDependencies ++= Seq(
+  "com.softwaremill.sttp.client3" %% "core" % "3.0.0-RC7",
+  "com.softwaremill.sttp.client3" %% "circe" % "3.0.0-RC7",
+  "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.0.0-RC7",
+  "com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.0.0-RC7"
+)
+
 javacOptions in(Compile, compile) ++= {
   val javaVersion = "1.8"
   Seq("-source", javaVersion, "-target", javaVersion)
