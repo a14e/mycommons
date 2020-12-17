@@ -23,40 +23,41 @@ trait SimpleCache[F[_], KEY, VALUE] {
   def remove(key: KEY): F[Unit]
 }
 
-class GuavaCache[F[_]: Async: Effect, KEY, VALUE](maxSize: Int = 10000,
+class GuavaCache[F[_]: Async, KEY, VALUE](maxSize: Int = 10000,
                                                   ttl: FiniteDuration = 10.minutes) extends SimpleCache[F, KEY, VALUE] {
 
   private val F = Async[F]
 
   override def get(key: KEY): F[Option[VALUE]] = {
-    F.suspend {
-      underlying.getIfPresent() match {
-        case null => F.pure(None)
-        case res => res.map(Some(_))
-      }
+    F.delay {
+      val res = underlying.getIfPresent()
+      Option(res)
     }
   }
 
   override def contains(key: KEY): F[Boolean] = F.delay(underlying.getIfPresent(key) != null)
 
-  override def put(key: KEY, value: VALUE): F[Unit] = F.delay(underlying.put(key, F.pure(value)))
+  override def put(key: KEY, value: VALUE): F[Unit] = F.delay(underlying.put(key, value))
 
   override def remove(key: KEY): F[Unit] = F.delay(underlying.invalidate(key))
 
 
   def cached(key: KEY)(block: => F[VALUE]): F[VALUE] = F.suspend {
-    underlying.get(key, {
-      _: KEY => Effect.toIOFromRunAsync(Async.memoize(F.suspend(block))).unsafeRunSync()
-    }).handleErrorWith {
-      err =>
-        F.delay(underlying.invalidate(key)) *>
-          F.raiseError(err)
+    underlying.getIfPresent(key) match {
+      case null =>
+        // no sync
+        block.map { x =>
+          underlying.put(key, x)
+          x
+        }
+      case x => F.pure(x)
     }
+
   }
 
   private val underlying = Caffeine.newBuilder()
     .maximumSize(maxSize)
     .expireAfterWrite(ttl.toMillis, TimeUnit.MILLISECONDS)
-    .build[KEY, F[VALUE]]()
+    .build[KEY, VALUE]()
 
 }
