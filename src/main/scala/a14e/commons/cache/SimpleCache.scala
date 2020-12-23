@@ -2,62 +2,59 @@ package a14e.commons.cache
 
 import java.util.concurrent.TimeUnit
 
-import cats.effect.{Async, Effect, Sync}
+import cats.effect.{Async, IO, Sync}
 import com.github.benmanes.caffeine.cache.Caffeine
 import cats.syntax.all._
-
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait SimpleCache[F[_], KEY, VALUE] {
+trait SimpleCache[KEY, VALUE] {
 
-  def cached(key: KEY)(value: => F[VALUE]): F[VALUE]
+  def cached(key: KEY)(value: => IO[VALUE]): IO[VALUE]
 
-  def get(key: KEY): F[Option[VALUE]]
+  def get(key: KEY): IO[Option[VALUE]]
 
-  def contains(key: KEY): F[Boolean]
+  def contains(key: KEY): IO[Boolean]
 
   def put(key: KEY,
-          value: VALUE): F[Unit]
+          value: VALUE): IO[Unit]
 
-  def remove(key: KEY): F[Unit]
+  def remove(key: KEY): IO[Unit]
 }
 
-class GuavaCache[F[_]: Async, KEY, VALUE](maxSize: Int = 10000,
-                                                  ttl: FiniteDuration = 10.minutes) extends SimpleCache[F, KEY, VALUE] {
+class GuavaCache[KEY, VALUE](maxSize: Int = 10000,
+                             ttl: FiniteDuration = 10.minutes) extends SimpleCache[KEY, VALUE] {
 
-  private val F = Async[F]
 
-  override def get(key: KEY): F[Option[VALUE]] = {
-    F.delay {
-      val res = underlying.getIfPresent()
-      Option(res)
+  override def get(key: KEY): IO[Option[VALUE]] = {
+    IO.suspend {
+      underlying.getIfPresent() match {
+        case null => IO.pure(None)
+        case res => res.map(Some(_))
+      }
     }
   }
 
-  override def contains(key: KEY): F[Boolean] = F.delay(underlying.getIfPresent(key) != null)
+  override def contains(key: KEY): IO[Boolean] = IO(underlying.getIfPresent(key) != null)
 
-  override def put(key: KEY, value: VALUE): F[Unit] = F.delay(underlying.put(key, value))
+  override def put(key: KEY, value: VALUE): IO[Unit] = IO(underlying.put(key, IO.pure(value)))
 
-  override def remove(key: KEY): F[Unit] = F.delay(underlying.invalidate(key))
+  override def remove(key: KEY): IO[Unit] = IO(underlying.invalidate(key))
 
 
-  def cached(key: KEY)(block: => F[VALUE]): F[VALUE] = F.suspend {
-    underlying.getIfPresent(key) match {
-      case null =>
-        // no sync
-        block.map { x =>
-          underlying.put(key, x)
-          x
-        }
-      case x => F.pure(x)
+  def cached(key: KEY)(block: => IO[VALUE]): IO[VALUE] = IO.suspend {
+    underlying.get(key, {
+      _: KEY => Async.memoize(IO.suspend(block)).unsafeRunSync()
+    }).handleErrorWith {
+      err =>
+        IO.delay(underlying.invalidate(key)) *>
+          IO.raiseError(err)
     }
-
   }
 
   private val underlying = Caffeine.newBuilder()
     .maximumSize(maxSize)
     .expireAfterWrite(ttl.toMillis, TimeUnit.MILLISECONDS)
-    .build[KEY, VALUE]()
+    .build[KEY, IO[VALUE]]()
 
 }
