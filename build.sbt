@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.3.24"
+version := "0.3.23"
 
 
 organization := "com.github.a14e"
