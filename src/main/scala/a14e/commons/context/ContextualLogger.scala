@@ -6,109 +6,78 @@ import com.typesafe.scalalogging.Logger
 import org.slf4j.{MDC, Marker}
 import cats.implicits._
 
+import net.logstash.logback.marker.Markers._
+import scala.jdk.CollectionConverters._
 
 class ContextualLogger[F[_] : Sync : Contextual](val underlying: Logger) {
   // Error
 
-  def error(message: => String): F[Unit] = wrapToContext {
-    underlying.error(message)
-  }
+  def error(message: => String, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.error(marker, message)
+    }
 
-  def error(message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.error(message, cause)
-  }
-
-  def error(marker: Marker, message: => String): F[Unit] = wrapToContext {
-    underlying.error(marker, message)
-  }
-
-  def error(marker: Marker, message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.error(marker, message, cause)
-  }
+  def error(message: => String, cause: Throwable, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.error(marker, message, cause)
+    }
 
 
   // Warn
 
-  def warn(message: => String): F[Unit] = wrapToContext {
-    underlying.warn(message)
-  }
+  def warn(message: => String, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.warn(marker, message)
+    }
 
-  def warn(message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.warn(message, cause)
-  }
+  def warn(message: => String, cause: Throwable, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.warn(marker, message, cause)
+    }
 
-  def warn(message: => String, args: Any*): F[Unit] = wrapToContext {
-    underlying.warn(message, args)
-  }
-
-  def warn(marker: Marker, message: => String): F[Unit] = wrapToContext {
-    underlying.warn(marker, message)
-  }
-
-  def warn(marker: Marker, message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.warn(marker, message, cause)
-  }
-
-  def warn(marker: Marker, message: => String, args: Any*): F[Unit] = wrapToContext {
-    underlying.warn(marker, message, args)
-  }
 
   // Info
 
-  def info(message: => String): F[Unit] = wrapToContext {
-    underlying.info(message)
-  }
+  def info(message: => String, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.info(marker, message)
+    }
 
-  def info(message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.info(message, cause)
-  }
-
-  def info(marker: Marker, message: => String): F[Unit] = wrapToContext {
-    underlying.info(marker, message)
-  }
-
-  def info(marker: Marker, message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.info(marker, message, cause)
-  }
+  def info(message: => String, cause: Throwable, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.info(marker, message, cause)
+    }
 
 
   // Debug
 
-  def debug(message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.debug(message, cause)
-  }
+  def debug(message: => String, cause: Throwable, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.debug(marker, message, cause)
+    }
 
-  def debug(marker: Marker, message: => String): F[Unit] = wrapToContext {
-    underlying.debug(marker, message)
-  }
+  def debug(message: => String, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.debug(marker, message)
+    }
 
-  def debug(marker: Marker, message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.debug(marker, message, cause)
-  }
 
   // Trace
 
-  def trace(message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.trace(message, cause)
-  }
+  def trace(message: => String, cause: Throwable, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.trace(marker, message, cause)
+    }
 
 
-  def trace(marker: Marker, message: => String): F[Unit] = wrapToContext {
-    underlying.trace(marker, message)
-  }
+  def trace(message: => String, kvs: (String, String)*): F[Unit] =
+    makersWithMdc(kvs).map { marker =>
+      underlying.trace(marker, message)
+    }
 
-  def trace(marker: Marker, message: => String, cause: Throwable): F[Unit] = wrapToContext {
-    underlying.trace(marker, message, cause)
-  }
-
-
-  private def wrapToContext(block: => Unit): F[Unit] = {
-    import scala.jdk.CollectionConverters._
-    for {
-      ctx <- Contextual[F].context()
-      _ = MDC.setContextMap(ctx.asJava)
-      _ = block
-      _ = MDC.clear()
-    } yield ()
+  private def makersWithMdc(markers: Seq[(String, String)]): F[Marker] = {
+    Contextual[F].context().map { ctx =>
+      appendEntries((ctx ++ markers).asJava)
+    }
   }
 }

@@ -46,9 +46,10 @@ libraryDependencies ++= Seq(
 libraryDependencies += "org.typelevel" %% "cats-effect" % "2.2.0"
 libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.4"
 libraryDependencies += "co.fs2" %% "fs2-reactive-streams" % "2.4.4"
-libraryDependencies += "org.camunda.bpm" % "camunda-external-task-client" % "1.3.1"
 libraryDependencies += "com.sun.xml.bind" % "jaxb-impl" % "2.3.3"
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3"
+
+libraryDependencies += "net.logstash.logback" % "logstash-logback-encoder" % "6.6"
 
 val circeVersion = "0.13.0"
 libraryDependencies ++= Seq(
