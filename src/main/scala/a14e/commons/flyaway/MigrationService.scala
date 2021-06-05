@@ -29,7 +29,7 @@ class MigrationServiceImpl[F[_] : Async](migrationConfigs: MigrationsConfigs, bl
       generateFlyaway().map(_.migrate())
     }
 
-    Async[F].evalOn(io, blockingContext)
+    Async[F].evalOn(io, blockingContext).void
   }
 
   override def migrateIfConfigured(): F[Boolean] = {
