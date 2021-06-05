@@ -11,7 +11,7 @@ trait TimeService[F[_]] {
 }
 
 final class TimeServiceImpl[F[_]: Sync] extends TimeService[F] {
-  protected val F = Sync[F]
+  protected val F: Sync[F] = Sync[F]
   override def now: F[Instant] = F.delay(Instant.now())
   override def clock: F[Clock] = F.delay(Clock.systemUTC())
 }

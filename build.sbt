@@ -18,8 +18,8 @@ resolvers +=
 
 libraryDependencies ++= Seq(
 
-  "com.google.guava" % "guava" % "29.0-jre", // для полезных утилит (пока только кэш)
-  "com.github.ben-manes.caffeine" % "caffeine" % "2.8.5",
+  "com.google.guava" % "guava" % "30.1.1-jre", // для полезных утилит (пока только кэш)
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.0.2",
 
   /** чтобы гуава не жаловалась */
   "com.google.code.findbugs" % "jsr305" % "3.0.2",
@@ -40,12 +40,10 @@ libraryDependencies ++= Seq(
 
 
   // для конфигов
-  "com.github.pureconfig" %% "pureconfig" % "0.13.0",
+  "com.github.pureconfig" %% "pureconfig" % "0.15.0",
 )
 
-libraryDependencies += "org.typelevel" %% "cats-effect" % "2.2.0"
-libraryDependencies += "co.fs2" %% "fs2-core" % "2.4.4"
-libraryDependencies += "co.fs2" %% "fs2-reactive-streams" % "2.4.4"
+libraryDependencies += "org.typelevel" %% "cats-effect" % "3.1.1"
 libraryDependencies += "com.sun.xml.bind" % "jaxb-impl" % "2.3.3"
 libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3"
 
@@ -58,18 +56,10 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser"
 ).map(_ % circeVersion)
 
-libraryDependencies ++= Seq(
-  "com.softwaremill.sttp.client3" %% "core" % "3.0.0-RC7",
-  "com.softwaremill.sttp.client3" %% "circe" % "3.0.0-RC7",
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.0.0-RC7",
-  "com.softwaremill.sttp.client3" %% "slf4j-backend" % "3.0.0-RC7"
-)
-
 javacOptions in(Compile, compile) ++= {
   val javaVersion = "1.8"
   Seq("-source", javaVersion, "-target", javaVersion)
 }
-
 
 addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0")
 

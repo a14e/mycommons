@@ -1,11 +1,13 @@
 package a14e.commons.flyaway
 
-import cats.effect.{ContextShift, IO, Resource, Sync}
+import cats.effect.kernel.Async
+import cats.effect.std.Dispatcher
+import cats.effect.{IO, Resource, Sync}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.flywaydb.core.Flyway
-import org.flywaydb.core.internal.util.jdbc.DriverDataSource
 import cats.implicits._
+import org.flywaydb.core.internal.util.jdbc.DriverDataSource
 
 import scala.concurrent.ExecutionContext
 
@@ -18,14 +20,13 @@ trait MigrationService[F[_]] {
 }
 
 
-class MigrationServiceImpl[F[_] : Sync](migrationConfigs: MigrationsConfigs, blockingContext: ExecutionContext)
-                                       (implicit shift: ContextShift[F])
+class MigrationServiceImpl[F[_] : Async](migrationConfigs: MigrationsConfigs, blockingContext: ExecutionContext)
   extends MigrationService[F]
     with LazyLogging {
-  override def migrate(): F[Unit] = shift.evalOn(blockingContext)(Sync[F].suspend {
+  override def migrate(): F[Unit] = Async[F].blocking {
     logger.info("Starting migrations")
     generateFlyaway().map(_.migrate())
-  })
+  }
 
   override def migrateIfConfigured(): F[Boolean] = {
     val migrated = migrationConfigs.migrationOnStart

@@ -20,7 +20,7 @@ trait RandomService[F[_]] {
 }
 
 class RandomServiceImpl[F[_] : Sync](random: Random) extends RandomService[F] {
-  protected val F = Sync[F]
+  protected val F: Sync[F] = Sync[F]
 
   override def generateUuid(): F[UUID] = F.delay(UUID.randomUUID())
 

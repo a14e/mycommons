@@ -3,7 +3,7 @@ package a14e.commons.context
 import a14e.commons.context.Contextual.Context
 import cats.{Applicative, Functor}
 import cats.data.{ReaderT, StateT, Writer, WriterT}
-import cats.effect.{CancelToken, ConcurrentEffect, ContextShift, Effect, ExitCase, Fiber, IO, Sync, SyncIO}
+import cats.effect.{Fiber, IO, Sync, SyncIO}
 import com.typesafe.scalalogging.Logger
 import org.slf4j.Marker
 

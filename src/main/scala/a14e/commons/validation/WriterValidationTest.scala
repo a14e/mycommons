@@ -1,6 +1,7 @@
 package a14e.commons.validation
 
 import cats.data.WriterT
+import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Sync}
 import cats.{Applicative, ApplicativeError, Functor, MonadError, Traverse}
 import cats.instances.list._
@@ -84,6 +85,7 @@ object WriterValidationTest extends App {
     }
   }
 
+  private implicit val runtime = IORuntime.global
 
   val res = (for {
     _ <- Traverse[List].traverse(List(1, 2, 3)) { i =>

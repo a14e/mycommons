@@ -1,7 +1,8 @@
 package a14e.commons.catseffect
 
 import cats.effect
-import cats.effect.{Effect, Sync}
+import cats.effect.Sync
+import cats.effect.std.Dispatcher
 
 import scala.concurrent.Future
 
@@ -30,9 +31,9 @@ object CatsIoImplicits {
 
     import cats.implicits._
     import cats.effect.implicits._
-    def unsafeRunSync()(implicit effect: Effect[F]): A = io.toIO.unsafeRunSync()
-    def unsafeToFuture()(implicit effect: Effect[F]): Future[A] = io.toIO.unsafeToFuture()
-    def unsafeRunAsyncAndForget()(implicit effect: Effect[F]): Unit = io.toIO.unsafeRunAsyncAndForget()
+    def unsafeRunSync()(implicit d: Dispatcher[F]): A = d.unsafeRunSync(io)
+    def unsafeToFuture()(implicit d: Dispatcher[F]): Future[A] = d.unsafeToFuture(io)
+    def unsafeRunAsyncAndForget()(implicit d: Dispatcher[F]): Unit = d.unsafeRunAndForget(io)
 
   }
 

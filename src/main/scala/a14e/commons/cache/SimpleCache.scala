@@ -3,7 +3,8 @@ package a14e.commons.cache
 import a14e.commons.context.Contextual
 
 import java.util.concurrent.TimeUnit
-import cats.effect.{Async, Effect, Sync}
+import cats.effect.{Async, Sync}
+import cats.effect.std.Dispatcher
 import com.github.benmanes.caffeine.cache.Caffeine
 import cats.syntax.all._
 
@@ -24,13 +25,14 @@ trait SimpleCache[F[_], KEY, VALUE] {
   def remove(key: KEY): F[Unit]
 }
 
-class GuavaCache[F[_] : Effect : Contextual, KEY, VALUE](maxSize: Int = 10000,
-                                                         ttl: FiniteDuration = 10.minutes) extends SimpleCache[F, KEY, VALUE] {
+class GuavaCache[F[_] : Async : Contextual, KEY, VALUE](maxSize: Int = 10000,
+                                                                    ttl: FiniteDuration = 10.minutes) extends SimpleCache[F, KEY, VALUE] {
 
   import cats.implicits._
   import cats.effect.implicits._
+  import cats.effect.syntax
 
-  private val F = Effect[F]
+  private val F = Async[F]
 
   override def get(key: KEY): F[Option[VALUE]] = {
     underlying.getIfPresent(key) match {
@@ -49,12 +51,14 @@ class GuavaCache[F[_] : Effect : Contextual, KEY, VALUE](maxSize: Int = 10000,
   def cached(key: KEY)(block: => F[VALUE]): F[VALUE] =
     Contextual[F].context().flatMap { ctx =>
       underlying.get(key, (_: KEY) => {
-        val io = Async.memoize {
-          Contextual[F].withContext(ctx) {
-            F.suspend(block)
+        Dispatcher[F].use { dispatcher =>
+          val io: F[F[VALUE]] = F.memoize {
+            Contextual[F].withContext(ctx) {
+              F.defer(block)
+            }
           }
+          dispatcher.unsafeRunSync(io)
         }
-        F.toIO(io).unsafeRunSync()
       }).handleErrorWith { err =>
         this.remove(key) *> F.raiseError(err)
       }
