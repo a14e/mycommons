@@ -48,21 +48,23 @@ class GuavaCache[F[_] : Async : Contextual, KEY, VALUE](maxSize: Int = 10000,
   override def remove(key: KEY): F[Unit] = F.delay(underlying.invalidate(key))
 
 
-  def cached(key: KEY)(block: => F[VALUE]): F[VALUE] =
-    Contextual[F].context().flatMap { ctx =>
-      underlying.get(key, (_: KEY) => {
-        Dispatcher[F].use { dispatcher =>
-          val io: F[F[VALUE]] = F.memoize {
+  def cached(key: KEY)(block: => F[VALUE]): F[VALUE] = {
+
+    Dispatcher[F].use { dispatcher =>
+      Contextual[F].context().flatMap { ctx =>
+        underlying.get(key, (_: KEY) => {
+          val io = F.memoize {
             Contextual[F].withContext(ctx) {
               F.defer(block)
             }
           }
           dispatcher.unsafeRunSync(io)
+        }).handleErrorWith { err =>
+          this.remove(key) *> F.raiseError(err)
         }
-      }).handleErrorWith { err =>
-        this.remove(key) *> F.raiseError(err)
       }
     }
+  }
 
   private val underlying = Caffeine.newBuilder()
     .maximumSize(maxSize)
