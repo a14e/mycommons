@@ -23,9 +23,13 @@ trait MigrationService[F[_]] {
 class MigrationServiceImpl[F[_] : Async](migrationConfigs: MigrationsConfigs, blockingContext: ExecutionContext)
   extends MigrationService[F]
     with LazyLogging {
-  override def migrate(): F[Unit] = Async[F].blocking {
-    logger.info("Starting migrations")
-    generateFlyaway().map(_.migrate())
+  override def migrate(): F[Unit] = {
+    val io = Async[F].defer {
+      logger.info("Starting migrations")
+      generateFlyaway().map(_.migrate())
+    }
+
+    Async[F].evalOn(io, blockingContext)
   }
 
   override def migrateIfConfigured(): F[Boolean] = {
