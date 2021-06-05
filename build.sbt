@@ -1,7 +1,7 @@
 
 name := "mycommons"
 
-version := "0.3.28"
+version := "0.3.29"
 
 
 organization := "com.github.a14e"
@@ -18,7 +18,7 @@ resolvers +=
 
 libraryDependencies ++= Seq(
 
-  "com.google.guava" % "guava" % "30.1.1-jre", // для полезных утилит (пока только кэш)
+  "com.google.guava" % "guava" % "29.0-jre", // для полезных утилит (пока только кэш)
   "com.github.ben-manes.caffeine" % "caffeine" % "3.0.2",
 
   /** чтобы гуава не жаловалась */
