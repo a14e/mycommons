@@ -50,20 +50,30 @@ class GuavaCache[F[_] : Async : Contextual, KEY, VALUE](maxSize: Int = 10000,
 
   def cached(key: KEY)(block: => F[VALUE]): F[VALUE] = {
 
-    Dispatcher[F].use { dispatcher =>
-      Contextual[F].context().flatMap { ctx =>
-        underlying.get(key, (_: KEY) => {
-          val io = F.memoize {
-            Contextual[F].withContext(ctx) {
-              F.defer(block)
+    def getOrComputeWIthContextPassing(): F[VALUE] = {
+      Dispatcher[F].use { dispatcher =>
+        Contextual[F].context().flatMap { ctx =>
+          underlying.get(key, (_: KEY) => {
+            val io = F.memoize {
+              Contextual[F].withContext(ctx) {
+                F.defer(block)
+              }
             }
+            dispatcher.unsafeRunSync(io)
+          }).handleErrorWith { err =>
+            this.remove(key) *> F.raiseError(err)
           }
-          dispatcher.unsafeRunSync(io)
-        }).handleErrorWith { err =>
-          this.remove(key) *> F.raiseError(err)
         }
       }
     }
+
+    // все же тут чуть-чуть экономню, чтобы не создавать лишний диспатчер
+    // а то, хоть и пишут, что он дешевый, но его имплементация меня несколько пугает
+    get(key).flatMap {
+      case Some(x) => F.pure(x)
+      case None => getOrComputeWIthContextPassing()
+    }
+
   }
 
   private val underlying = Caffeine.newBuilder()
