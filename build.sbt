@@ -1,12 +1,12 @@
 
 name := "mycommons"
 
-version := "0.3.32"
+version := "0.3.33"
 
 
 organization := "com.github.a14e"
 
-scalaVersion := "2.13.3"
+scalaVersion := "2.13.6"
 
 
 val akkaStreamsVersion = "2.5.23"
@@ -18,34 +18,34 @@ resolvers +=
 libraryDependencies ++= Seq(
 
   "com.google.guava" % "guava" % "29.0-jre", // для полезных утилит (пока только кэш)
-  "com.github.ben-manes.caffeine" % "caffeine" % "3.0.5",
+  "com.github.ben-manes.caffeine" % "caffeine" % "3.0.2",
 
   /** чтобы гуава не жаловалась */
   "com.google.code.findbugs" % "jsr305" % "3.0.2",
 
 
-  "ch.qos.logback" % "logback-classic" % "1.2.8", // для логов
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4", //упрощенные логи
+  "ch.qos.logback" % "logback-classic" % "1.2.3", // для логов
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2", //упрощенные логи
 
 
   "org.scalatest" %% "scalatest" % "3.0.8" % "test", // для тестов
   "junit" % "junit" % "4.12" % "test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
 
-  "org.reflections" % "reflections" % "0.10.2",
+  "org.reflections" % "reflections" % "0.9.10",
 
   "org.flywaydb" % "flyway-core" % "4.2.0",
 
 
   // для конфигов
-  "com.github.pureconfig" %% "pureconfig" % "0.17.1",
+  "com.github.pureconfig" %% "pureconfig" % "0.15.0",
 )
 
-libraryDependencies += "org.typelevel" %% "cats-effect" % "3.3.0"
-libraryDependencies += "com.sun.xml.bind" % "jaxb-impl" % "3.0.1"
-libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.7"
+libraryDependencies += "org.typelevel" %% "cats-effect" % "3.1.1"
+libraryDependencies += "com.sun.xml.bind" % "jaxb-impl" % "2.3.3"
+libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.3"
 
-libraryDependencies += "net.logstash.logback" % "logstash-logback-encoder" % "7.0.1"
+libraryDependencies += "net.logstash.logback" % "logstash-logback-encoder" % "6.6"
 
 val circeVersion = "0.13.0"
 libraryDependencies ++= Seq(
