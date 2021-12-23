@@ -6,10 +6,9 @@ version := "0.3.32"
 
 organization := "com.github.a14e"
 
-scalaVersion := "2.13.6"
+scalaVersion := "2.13.3"
 
 
-val akkaHttpVersion = "10.1.8"
 val akkaStreamsVersion = "2.5.23"
 val playJsonVersion = "2.7.4"
 
@@ -29,13 +28,13 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4", //упрощенные логи
 
 
-  "org.scalatest" %% "scalatest" % "3.2.9" % "test", // для тестов
-  "junit" % "junit" % "4.13.2" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.8" % "test", // для тестов
+  "junit" % "junit" % "4.12" % "test",
   "org.mockito" % "mockito-all" % "1.10.19" % "test",
 
   "org.reflections" % "reflections" % "0.10.2",
 
-  "org.flywaydb" % "flyway-core" % "8.1.0",
+  "org.flywaydb" % "flyway-core" % "4.2.0",
 
 
   // для конфигов

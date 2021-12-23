@@ -2,6 +2,7 @@ package a14e.commons.context
 
 import cats.effect.Sync
 import com.typesafe.scalalogging.Logger
+import org.slf4j.LoggerFactory
 
 
 trait LazyContextLogging {
